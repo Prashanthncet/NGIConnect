@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: ngiconnect-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@ngi.org.in
+      - key: ADMIN_PASSWORD
+        value: AdminNGI@2026
+      - key: ADMIN_NAME
+        value: Dr. Rajesh Sharma
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: '"NGi Connect Admissions" <prashanth123@ncetmail.com>'

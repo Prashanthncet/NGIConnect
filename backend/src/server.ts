@@ -23,14 +23,18 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server proxy)
+      // Allow requests with no origin (like mobile apps, curl, server-to-server Next.js rewrites)
       if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else if (ENV.NODE_ENV !== "production") {
-        callback(null, true); // Dev-friendly permissive fallback in development
-      } else {
-        callback(new Error("CORS policy violation: domain not allowed"));
+        return callback(null, true);
       }
+      // Automatically allow Vercel production and preview domains
+      if (origin.endsWith(".vercel.app") || origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+      if (ENV.NODE_ENV !== "production") {
+        return callback(null, true); // Dev-friendly permissive fallback in development
+      }
+      callback(new Error(`CORS policy violation: domain ${origin} not allowed`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

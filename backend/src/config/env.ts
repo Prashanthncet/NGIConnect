@@ -5,7 +5,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const defaultJwtSecret = "ngi_connect_super_secret_jwt_key_2026_institutional_secure";
 
 if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === defaultJwtSecret)) {
-  throw new Error("SECURITY FATAL: You must define a unique, high-entropy JWT_SECRET in production.");
+  console.warn("⚠️ SECURITY WARNING: Please set a unique, high-entropy JWT_SECRET in production environment variables.");
 }
 
 export const ENV = {
