@@ -14,7 +14,6 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
-  Tooltip,
 } from "@mui/material";
 import {
   EmailOutlined as EmailIcon,
@@ -22,28 +21,18 @@ import {
   VisibilityOutlined as VisibilityIcon,
   VisibilityOffOutlined as VisibilityOffIcon,
   ArrowForward as ArrowForwardIcon,
-  CheckCircleOutlined as CheckCircleIcon,
-  ContentCopyOutlined as CopyIcon,
 } from "@mui/icons-material";
 
 export default function AdminLoginPage() {
   const router = useRouter();
 
   // Form State
-  const [email, setEmail] = useState("admin@ngi.org.in");
-  const [password, setPassword] = useState("AdminNGI@2026");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState(false);
-
-  // Quick fill default admin credentials
-  const fillDefaultCredentials = () => {
-    setEmail("admin@ngi.org.in");
-    setPassword("AdminNGI@2026");
-    setError(null);
-  };
 
   // Direct Email + Password Login -> Dashboard
   const handleLogin = async (e: React.FormEvent) => {
@@ -71,6 +60,11 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Store authenticated admin info in localStorage for display in sidebar/header
+      if (data.admin) {
+        localStorage.setItem("ngi_admin_user", JSON.stringify(data.admin));
+      }
+
       // Successful login -> Redirect directly to Admin Dashboard
       router.push("/admin/dashboard");
     } catch {
@@ -78,12 +72,6 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const copyPasswordToClipboard = () => {
-    navigator.clipboard.writeText("AdminNGI@2026");
-    setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   return (
@@ -222,38 +210,20 @@ export default function AdminLoginPage() {
             </Box>
 
             {/* Password Field */}
-            <Box sx={{ mb: 2.5 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                    color: "#1E293B",
-                    display: "block",
-                  }}
-                >
-                  Password
-                </Typography>
-                <Tooltip title="Copy default admin password">
-                  <Button
-                    size="small"
-                    onClick={copyPasswordToClipboard}
-                    startIcon={copiedKey ? <CheckCircleIcon sx={{ fontSize: 13 }} /> : <CopyIcon sx={{ fontSize: 13 }} />}
-                    sx={{
-                      textTransform: "none",
-                      fontSize: "0.72rem",
-                      color: copiedKey ? "#10B981" : "#F28C28",
-                      p: 0,
-                      minWidth: 0,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {copiedKey ? "Copied!" : "Copy Password"}
-                  </Button>
-                </Tooltip>
-              </Box>
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "#1E293B",
+                  display: "block",
+                  mb: 1,
+                }}
+              >
+                Password
+              </Typography>
               <TextField
                 fullWidth
                 type={showPassword ? "text" : "password"}
@@ -284,51 +254,6 @@ export default function AdminLoginPage() {
                   },
                 }}
               />
-            </Box>
-
-            {/* Credentials Note */}
-            <Box
-              sx={{
-                bgcolor: "rgba(242, 140, 40, 0.07)",
-                border: "1px dashed rgba(242, 140, 40, 0.35)",
-                borderRadius: "14px",
-                p: 2,
-                mb: 3,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1.5,
-              }}
-            >
-              <Box>
-                <Typography variant="caption" sx={{ color: "#B45309", fontWeight: 700, display: "block" }}>
-                  Default Admin Credentials:
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#102B46", fontSize: "0.78rem", mt: 0.2 }}>
-                  <strong>Email:</strong> admin@ngi.org.in &nbsp;|&nbsp; <strong>Password:</strong> AdminNGI@2026
-                </Typography>
-              </Box>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={fillDefaultCredentials}
-                sx={{
-                  textTransform: "none",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  borderColor: "#F28C28",
-                  color: "#D97706",
-                  whiteSpace: "nowrap",
-                  borderRadius: "8px",
-                  px: 1.5,
-                  "&:hover": {
-                    borderColor: "#B45309",
-                    bgcolor: "rgba(242, 140, 40, 0.12)",
-                  },
-                }}
-              >
-                Quick Fill
-              </Button>
             </Box>
 
             {/* Submit Button */}

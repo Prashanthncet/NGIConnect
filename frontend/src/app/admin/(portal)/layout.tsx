@@ -52,9 +52,9 @@ export default function PortalLayout({
   }
 
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row bg-[#F7F8FA]">
+    <div className="h-screen w-full overflow-hidden flex flex-col lg:flex-row bg-[#F7F8FA]">
       <AdminSidebar registrationCount={regCount} />
-      <div className="flex-1 flex flex-col min-w-0 h-full lg:overflow-hidden overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {children}
       </div>
     </div>

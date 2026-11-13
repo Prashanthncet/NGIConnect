@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,6 +19,7 @@ import {
   PeopleAltOutlined as PeopleIcon,
   DynamicFormOutlined as FormEditIcon,
   ManageAccountsOutlined as UsersIcon,
+  EmailOutlined as EmailIcon,
   LogoutOutlined as LogoutIcon,
   OpenInNew as OpenInNewIcon,
   Menu as MenuIcon,
@@ -33,6 +34,50 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ registrationCount = 0 }: AdminSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [adminUser, setAdminUser] = useState<{ name?: string; email?: string; role?: string } | null>(null);
+
+  useEffect(() => {
+    // 1. Immediate read from localStorage to prevent UI flashing
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("ngi_admin_user");
+        if (stored) {
+          setAdminUser(JSON.parse(stored));
+        }
+      } catch {}
+    }
+
+    // 2. Fetch authenticated user from backend session
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.authenticated && data.admin) {
+          setAdminUser(data.admin);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("ngi_admin_user", JSON.stringify(data.admin));
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const displayName = adminUser?.name || "Administrator";
+  const displayEmail = adminUser?.email || "admin@ngi.org.in";
+
+  // Compute initials safely from name or email
+  const initials = (() => {
+    if (adminUser?.name) {
+      const parts = adminUser.name.trim().split(" ");
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+    if (adminUser?.email) {
+      return adminUser.email.substring(0, 2).toUpperCase();
+    }
+    return "AD";
+  })();
 
   const navLinks = [
     {
@@ -50,6 +95,11 @@ export default function AdminSidebar({ registrationCount = 0 }: AdminSidebarProp
       name: "Dynamic Form Studio",
       href: "/admin/form-builder",
       icon: FormEditIcon,
+    },
+    {
+      name: "Email Templates",
+      href: "/admin/email-templates",
+      icon: EmailIcon,
     },
     {
       name: "User Management",
@@ -286,14 +336,14 @@ export default function AdminSidebar({ registrationCount = 0 }: AdminSidebarProp
                 flexShrink: 0,
               }}
             >
-              AD
+              {initials}
             </Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography noWrap variant="body2" sx={{ fontWeight: 700, fontSize: "0.8rem", color: "#FFFFFF" }}>
-                Administrator
+                {displayName}
               </Typography>
               <Typography noWrap variant="caption" sx={{ color: "#94A3B8", fontSize: "0.7rem", display: "block" }}>
-                admin@ngi.org.in
+                {displayEmail}
               </Typography>
             </Box>
           </Box>

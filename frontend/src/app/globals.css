@@ -12,7 +12,13 @@
   --card-white: #FFFFFF;
 }
 
+html,
 body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
   font-family: 'Poppins', 'Inter', sans-serif;
   background-color: var(--bg-canvas);
   color: #202A35;

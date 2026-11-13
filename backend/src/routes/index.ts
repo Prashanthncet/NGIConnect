@@ -6,11 +6,13 @@ import statsRoutes from "./statsRoutes";
 import institutionRoutes from "./institutionRoutes";
 import seedRoutes from "./seedRoutes";
 import adminUserRoutes from "./adminUserRoutes";
+import emailTemplateRoutes from "./emailTemplateRoutes";
 
 const router = Router();
 
 router.use("/auth", authRoutes);
 router.use("/admin/users", adminUserRoutes);
+router.use("/email-template", emailTemplateRoutes);
 router.use("/forms", formRoutes);
 router.use("/registrations", registrationRoutes);
 router.use("/stats", statsRoutes);
