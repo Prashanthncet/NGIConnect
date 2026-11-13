@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { ENV } from "./config/env";
@@ -22,7 +22,7 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (like mobile apps, curl, server-to-server Next.js rewrites)
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -48,7 +48,7 @@ app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // Request Logger in Dev
 if (ENV.NODE_ENV !== "production") {
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     console.log(`[${req.method}] ${req.path}`);
     next();
   });
@@ -58,7 +58,7 @@ if (ENV.NODE_ENV !== "production") {
 app.use("/api", apiRoutes);
 
 // Root Welcome Route
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.json({
     service: "NGi Connect Core REST API",
     version: "1.0.0",
