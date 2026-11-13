@@ -1,0 +1,35 @@
+{
+  "name": "ngi-connect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NGi Connect - Multi-Campus Institutional Portal & Dynamic Registry System",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev": "npm run dev:frontend",
+    "build:backend": "npm run build --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:backend": "npm run start --prefix backend",
+    "start:frontend": "npm run start --prefix frontend",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "kill:ports": "powershell -Command \"Get-NetTCPConnection -LocalPort 3002,5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }\"",
+    "test": "node tests/smoke-test.js && node tests/api-test.js",
+    "test:smoke": "node tests/smoke-test.js",
+    "test:api": "node tests/api-test.js",
+    "test:stress": "node tests/stress-test.js"
+  },
+  "keywords": [
+    "ngi",
+    "ncet",
+    "ncms",
+    "monorepo",
+    "express",
+    "nextjs",
+    "admin-portal"
+  ]
+}
