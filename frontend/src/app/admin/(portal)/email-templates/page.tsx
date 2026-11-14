@@ -51,14 +51,14 @@ interface EmailTemplateData {
 
 const DEFAULT_TEMPLATE: EmailTemplateData = {
   subject: "Registration Confirmed: {{registrationId}} - {{campusName}}",
-  fromName: "NGi Connect Admissions",
+  fromName: "Nagarjuna Connect Admissions",
   fromEmail: "",
   replyTo: "",
   institutionHeader: "NAGARJUNA GROUP OF INSTITUTIONS (NGI)",
   headerTitle: "Registration Confirmation & Thank You",
   academicYear: "2026-2027",
   welcomeMessage:
-    "Thank you for registering with <strong>NGI Connect</strong> for <strong>{{campusName}}</strong>. Your application has been successfully logged into our central academic admissions registry.",
+    "Thank you for registering with <strong>Nagarjuna Connect</strong> for <strong>{{campusName}}</strong>. Your application has been successfully logged into our central academic admissions registry.",
   highlightLabel: "YOUR OFFICIAL REGISTRATION ID",
   campusBadge: "{{institution}} Campus • Academic Session {{academicYear}}",
   stepsHeading: "WHAT HAPPENS NEXT:",
@@ -667,7 +667,7 @@ export default function EmailTemplatesPage() {
                         type="text"
                         value={template.fromName}
                         onChange={(e) => setTemplate({ ...template, fromName: e.target.value })}
-                        placeholder="e.g. NGi Connect Admissions"
+                        placeholder="e.g. Nagarjuna Connect Admissions"
                         className="w-full text-xs sm:text-sm px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl font-medium"
                       />
                     </div>
@@ -822,7 +822,7 @@ export default function EmailTemplatesPage() {
                 {/* Simulated Email Envelope Info */}
                 <div className="px-4 py-2 bg-slate-50/70 rounded-xl text-[11px] text-slate-500 space-y-0.5 font-mono">
                   <div className="truncate">
-                    <span className="font-bold text-slate-700">From:</span> {template.fromName || "NGi Connect Admissions"} &lt;{template.fromEmail || "admissions@ngi.org.in"}&gt;
+                    <span className="font-bold text-slate-700">From:</span> {template.fromName || "Nagarjuna Connect Admissions"} &lt;{template.fromEmail || "admissions@ngi.org.in"}&gt;
                   </div>
                   <div className="truncate">
                     <span className="font-bold text-slate-700">Subject:</span> {template.subject.replace(/\{\{registrationId\}\}/g, "NGI-NCMS-2026-82057").replace(/\{\{campusName\}\}/g, "NCMS")}

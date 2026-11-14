@@ -3,7 +3,7 @@ import ThemeRegistry from "@/theme/ThemeRegistry";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NGi Connect | Nagarjuna Group of Institutions",
+  title: "Nagarjuna Connect | Nagarjuna Group of Institutions",
   description:
     "Unified institutional networking, collaboration, and dynamic registration platform connecting Nagarjuna College of Engineering and Technology (NCET) and Nagarjuna College of Management Studies (NCMS).",
   keywords: "NGI, NCET, NCMS, Nagarjuna College, Engineering, Management, Bangalore, VTU, BNU, Registrations",

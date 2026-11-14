@@ -112,7 +112,7 @@ export default function AdminLoginPage() {
               fontSize: { xs: "1.5rem", sm: "1.875rem" },
             }}
           >
-            NGi Connect <Box component="span" sx={{ color: "#F28C28" }}>Admin Studio</Box>
+            Nagarjuna Connect <Box component="span" sx={{ color: "#F28C28" }}>Admin Studio</Box>
           </Typography>
           <Typography
             variant="body2"

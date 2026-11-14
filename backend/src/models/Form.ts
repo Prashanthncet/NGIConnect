@@ -125,7 +125,7 @@ const FormSettingsSchema = new Schema(
     allowMultipleSubmissions: { type: Boolean, default: false },
     uniqueField: { type: String, default: "email" },
     submitButtonText: { type: String, default: "Submit Registration" },
-    successMessage: { type: String, default: "Thank you for registering with NGI Connect." },
+    successMessage: { type: String, default: "Thank you for registering with Nagarjuna Connect." },
     requiresVerification: { type: Boolean, default: true },
   },
   { _id: false }

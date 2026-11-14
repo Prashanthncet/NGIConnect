@@ -189,7 +189,7 @@ function SuccessContent() {
                 </tr>
                 <tr className="border-b border-slate-200">
                   <td className="p-2.5 font-bold bg-slate-100 text-slate-700">Registration Mode</td>
-                  <td className="p-2.5 text-slate-900">NGi Connect Digital Academic Registry</td>
+                  <td className="p-2.5 text-slate-900">Nagarjuna Connect Digital Academic Registry</td>
                 </tr>
                 <tr>
                   <td className="p-2.5 font-bold bg-slate-100 text-slate-700">Submission Timestamp</td>
@@ -237,7 +237,7 @@ function SuccessContent() {
 
           {/* Slip Footer Security Note */}
           <div className="pt-2 border-t border-slate-200 text-[9px] text-slate-400 flex items-center justify-between">
-            <span>NGi Connect System-Generated Document • No manual signature required if electronically sealed</span>
+            <span>Nagarjuna Connect System-Generated Document • No manual signature required if electronically sealed</span>
             <span className="font-mono">Ref: {registrationId}</span>
           </div>
         </div>

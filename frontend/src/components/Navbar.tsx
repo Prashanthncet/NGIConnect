@@ -35,13 +35,13 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [campusMenuOpen, setCampusMenuOpen] = useState(false);
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const isDesktop = useMediaQuery("(min-width: 1040px)");
 
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About NGi", href: "/#about" },
     { label: "Institutions", href: "/#institutions" },
-    { label: "Why NGi Connect", href: "/#benefits" },
+    { label: "Why Nagarjuna Connect", href: "/#benefits" },
     { label: "Contact", href: "/#contact" },
   ];
 
@@ -132,69 +132,127 @@ export default function Navbar() {
           "@media print": { display: "none !important" },
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4, lg: 5 } }}>
           <Toolbar
             disableGutters
             sx={{
-              height: { xs: 64, sm: 72, md: 80 },
-              minHeight: { xs: 64, sm: 72, md: 80 },
+              height: { xs: 68, sm: 76, md: 84 },
+              minHeight: { xs: 68, sm: 76, md: 84 },
               justifyContent: "space-between",
+              alignItems: "center",
+              gap: 2,
             }}
           >
-            {/* Left: Brand Identity with Official NGi Logo */}
+            {/* Left: Brand Identity with Official NGi Logo & NAAC A+ Accreditation */}
             <Box
-              component={Link}
-              href="/"
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: { xs: 1.25, sm: 1.75 },
-                textDecoration: "none",
-                color: "inherit",
+                gap: { xs: 1.5, sm: 2, lg: 2.5 },
+                flexShrink: 0,
               }}
             >
+              {/* Brand Link */}
               <Box
-                component="img"
-                src="/images/ngi-logo.png"
-                alt="NGi Logo"
+                component={Link}
+                href="/"
                 sx={{
-                  width: { xs: 40, sm: 46 },
-                  height: { xs: 40, sm: 46 },
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 2px 4px rgba(16,43,70,0.12))",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: { xs: 1.25, sm: 1.5 },
+                  textDecoration: "none",
+                  color: "inherit",
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/images/ngi-header-logo.png"
+                  alt="NGI Logo"
+                  sx={{
+                    width: { xs: 44, sm: 52 },
+                    height: { xs: 44, sm: 52 },
+                    objectFit: "contain",
+                    filter: "drop-shadow(0 2px 4px rgba(16,43,70,0.08))",
+                    flexShrink: 0,
+                  }}
+                />
+                <Box sx={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 800,
+                      fontSize: { xs: "1.05rem", sm: "1.25rem", lg: "1.35rem" },
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.15,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Nagarjuna <Box component="span" sx={{ color: "#F28C28" }}>Connect</Box>
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontSize: { xs: "0.625rem", sm: "0.7rem" },
+                      color: "#64748B",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Academic Registry
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Subtle Vertical Divider */}
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
+                  height: 38,
+                  my: "auto",
+                  borderColor: "#E2E8F0",
+                  display: { xs: "none", sm: "block" },
                 }}
               />
-              <Box sx={{ display: "flex", flexDirection: "column" }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 800,
-                    fontSize: { xs: "1.125rem", sm: "1.35rem" },
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.15,
-                  }}
-                >
-                  NGi <Box component="span" sx={{ color: "#F28C28" }}>Connect</Box>
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontSize: { xs: "0.625rem", sm: "0.7rem" },
-                    color: "#64748B",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  Academic Registry
-                </Typography>
-              </Box>
+
+              {/* NAAC A+ Accreditation Seal - Bigger and Beside Brand */}
+              <Box
+                component="img"
+                src="/images/naac-a-plus-logo.png"
+                alt="NAAC A+ Accredited"
+                sx={{
+                  height: { xs: 38, sm: 50, md: 56 },
+                  width: "auto",
+                  objectFit: "contain",
+                  flexShrink: 0,
+                  filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.08))",
+                }}
+              />
             </Box>
 
-            {/* Desktop Navigation Links (>= md) */}
+            {/* Desktop Navigation Links (Equal Spaced & Single Row) */}
             {isDesktop ? (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: { md: 2.5, lg: 3.5 },
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  component="nav"
+                  aria-label="Main navigation"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: { md: 1, lg: 1.5 },
+                    flexShrink: 0,
+                  }}
+                >
                   {navLinks.map((link) => (
                     <Box
                       key={link.label}
@@ -203,10 +261,21 @@ export default function Navbar() {
                       sx={{
                         textDecoration: "none",
                         color: "#1E293B",
-                        fontSize: "0.925rem",
+                        fontSize: { md: "0.85rem", lg: "0.925rem" },
                         fontWeight: 600,
-                        transition: "color 0.2s ease",
-                        "&:hover": { color: "#F28C28" },
+                        whiteSpace: "nowrap",
+                        px: { md: 1.5, lg: 2 },
+                        py: 0.85,
+                        borderRadius: "8px",
+                        textAlign: "center",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          color: "#F28C28",
+                          bgcolor: "rgba(242, 140, 40, 0.08)",
+                        },
                       }}
                     >
                       {link.label}
@@ -222,11 +291,14 @@ export default function Navbar() {
                   color="warning"
                   endIcon={<ArrowForwardIcon sx={{ fontSize: 18 }} />}
                   sx={{
-                    px: 3,
-                    py: 1.2,
-                    fontSize: "0.9rem",
+                    px: { md: 2.2, lg: 3 },
+                    py: 1.1,
+                    fontSize: { md: "0.85rem", lg: "0.9rem" },
                     borderRadius: "12px",
                     fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    boxShadow: "0 4px 14px rgba(242,140,40,0.35)",
                   }}
                 >
                   Register Now
@@ -303,20 +375,30 @@ export default function Navbar() {
               borderBottom: "1px solid #E2E8F0",
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
               <Box
                 component="img"
-                src="/images/ngi-logo.png"
-                alt="NGi Logo"
+                src="/images/ngi-header-logo.png"
+                alt="NGI Logo"
                 sx={{
                   width: 36,
                   height: 36,
                   objectFit: "contain",
                 }}
               />
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#102B46" }}>
-                NGi Connect
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#102B46", fontSize: "0.95rem" }}>
+                Nagarjuna Connect
               </Typography>
+              <Box
+                component="img"
+                src="/images/naac-a-plus-logo.png"
+                alt="NAAC A+ Accredited"
+                sx={{
+                  height: 28,
+                  width: "auto",
+                  objectFit: "contain",
+                }}
+              />
             </Box>
             <IconButton
               onClick={() => setMobileOpen(false)}

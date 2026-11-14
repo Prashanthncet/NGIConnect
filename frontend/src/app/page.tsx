@@ -43,7 +43,7 @@ export default function HomePage() {
                 {/* Pill Tag */}
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-100/70 border border-orange-200 text-[#F28C28] text-xs font-bold uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-[#F28C28] animate-pulse"></span>
-                  <span>NGi Connect</span>
+                  <span>Nagarjuna Connect</span>
                 </div>
 
                 {/* Primary Headline */}
@@ -54,7 +54,7 @@ export default function HomePage() {
 
                 {/* Supporting Description with Justified Text Alignment */}
                 <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl mx-auto lg:mx-0 text-justify">
-                  Be part of NGi Connect, an initiative bringing together the Nagarjuna educational community through
+                  Be part of Nagarjuna Connect, an initiative bringing together the Nagarjuna educational community through
                   meaningful connections, collaboration and shared opportunities across engineering and management.
                 </p>
 
@@ -116,7 +116,7 @@ export default function HomePage() {
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-base sm:text-lg">NCET Main Campus</span>
                             <span className="text-[10px] bg-[#F28C28] text-white px-2 py-0.5 rounded-full font-bold">
-                              Devanahalli
+                              Bengaluru
                             </span>
                           </div>
                           <p className="text-xs text-slate-300 mt-0.5">
@@ -145,7 +145,32 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 2. ABOUT SECTION */}
+        {/* 2. PLACEMENT STATISTICS BANNER - 100% FULL WIDTH ABOVE ABOUT SECTION */}
+        <section className="w-full bg-[#F7F9FF] border-b border-slate-200/80 py-10 lg:py-14">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10">
+              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 gap-6 sm:gap-0 items-center text-center">
+                <div className="sm:px-6 lg:px-8 py-3">
+                  <p className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#F28C28] tracking-tight leading-none">150+</p>
+                  <p className="text-sm sm:text-base text-slate-600 font-semibold mt-3">Companies Visited</p>
+                </div>
+                <div className="sm:px-6 lg:px-8 py-3">
+                  <p className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#F28C28] tracking-tight leading-none">800+</p>
+                  <p className="text-sm sm:text-base text-slate-600 font-semibold mt-3">Students Placed Since 2024</p>
+                </div>
+                <div className="sm:px-6 lg:px-8 py-3">
+                  <p className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#F28C28] tracking-tight leading-none">20 LPA</p>
+                  <p className="text-sm sm:text-base text-slate-600 font-semibold mt-3">Highest Package</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm font-extrabold text-[#174A70] tracking-[0.2em] uppercase text-center mt-4">
+              Placement Statistics — Since 2024
+            </p>
+          </div>
+        </section>
+
+        {/* 3. ABOUT SECTION */}
         <section className="py-20 bg-white border-b border-slate-200" id="about">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -176,7 +201,7 @@ export default function HomePage() {
               <div className="lg:col-span-6 space-y-6">
                 <div className="inline-flex items-center gap-2 text-[#174A70] text-xs uppercase font-bold tracking-wider">
                   <span className="w-6 h-0.5 bg-[#174A70]"></span>
-                  <span>About NGi Connect</span>
+                  <span>About Nagarjuna Connect</span>
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl font-bold text-[#102B46] tracking-tight leading-snug">
@@ -184,7 +209,7 @@ export default function HomePage() {
                 </h2>
 
                 <p className="text-base text-slate-600 leading-relaxed text-justify">
-                  NGi Connect brings together students, alumni, faculty and stakeholders from the Nagarjuna Group of
+                  Nagarjuna Connect brings together students, alumni, faculty and stakeholders from the Nagarjuna Group of
                   Institutions to build meaningful connections, share knowledge and explore collaborative opportunities
                   across institutions.
                 </p>
@@ -393,11 +418,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 4. WHY NGi CONNECT SECTION (6-Grid Icons) */}
+        {/* 4. WHY NAGARJUNA CONNECT SECTION (6-Grid Icons) */}
         <section className="py-20 bg-white border-b border-slate-200" id="benefits">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-14">
-              <span className="text-[#174A70] text-xs font-bold uppercase tracking-wider">Why NGi Connect?</span>
+              <span className="text-[#174A70] text-xs font-bold uppercase tracking-wider">Why Nagarjuna Connect?</span>
               <h2 className="text-3xl sm:text-4xl font-bold text-[#102B46] tracking-tight mt-1">
                 Meaningful Participation, Lasting Value
               </h2>
@@ -469,9 +494,9 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-[#102B46] rounded-3xl p-8 sm:p-12 text-white relative overflow-hidden shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="space-y-2 text-center md:text-left z-10 max-w-xl">
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-white">Be Part of NGi Connect</h3>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-white">Be Part of Nagarjuna Connect</h3>
                 <p className="text-sm sm:text-base text-slate-300">
-                  Take the first step. Complete your registration and become part of the NGi Connect community.
+                  Take the first step. Complete your registration and become part of the Nagarjuna Connect community.
                 </p>
               </div>
               <div className="z-10 shrink-0">

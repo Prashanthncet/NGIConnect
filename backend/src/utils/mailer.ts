@@ -135,7 +135,7 @@ export async function sendAdminLoginOtpEmail({
     }
 
     const fromAddress =
-      process.env.SMTP_FROM || `"NGi Connect Security" <${process.env.SMTP_USER || "security@ngi.org.in"}>`;
+      process.env.SMTP_FROM || `"Nagarjuna Connect Security" <${process.env.SMTP_USER || "security@ngi.org.in"}>`;
 
     const logoPath = getLogoFilePath();
     const attachments = logoPath
@@ -148,7 +148,7 @@ export async function sendAdminLoginOtpEmail({
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>NGi Connect OTP Verification</title>
+        <title>Nagarjuna Connect OTP Verification</title>
         <style>
           body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 28px 12px; color: #102B46; }
           .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 10px 25px rgba(16,43,70,0.06); }
@@ -171,12 +171,12 @@ export async function sendAdminLoginOtpEmail({
                 : ""
             }
             <p>Nagarjuna Group of Institutions</p>
-            <h1>NGi Connect Admin Studio</h1>
+            <h1>Nagarjuna Connect Admin Studio</h1>
           </div>
           <div class="body">
             <p style="font-size: 15px; margin: 0 0 12px;">Hello <strong>${adminName}</strong>,</p>
             <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin: 0 0 16px;">
-              A request was made to sign in to the NGi Connect Administration Console. Use the one-time verification code below to authenticate:
+              A request was made to sign in to the Nagarjuna Connect Administration Console. Use the one-time verification code below to authenticate:
             </p>
             <div class="otp-card">
               <p class="otp-code">${otpCode}</p>
@@ -197,7 +197,7 @@ export async function sendAdminLoginOtpEmail({
     const info = await transporter.sendMail({
       from: fromAddress,
       to: toEmail,
-      subject: `Your NGi Connect Verification Code: ${otpCode}`,
+      subject: `Your Nagarjuna Connect Verification Code: ${otpCode}`,
       html: htmlContent,
       attachments,
     });

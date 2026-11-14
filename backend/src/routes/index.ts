@@ -23,7 +23,7 @@ router.use("/seed", seedRoutes);
 router.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    service: "NGi Connect Backend API",
+    service: "Nagarjuna Connect Backend API",
     timestamp: new Date().toISOString(),
   });
 });

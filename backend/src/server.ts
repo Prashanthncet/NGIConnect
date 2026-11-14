@@ -60,7 +60,7 @@ app.use("/api", apiRoutes);
 // Root Welcome Route
 app.get("/", (req: Request, res: Response) => {
   res.json({
-    service: "NGi Connect Core REST API",
+    service: "Nagarjuna Connect Core REST API",
     version: "1.0.0",
     docs: "/api/health",
   });
@@ -75,7 +75,7 @@ async function startServer() {
     await connectToDatabase();
     app.listen(ENV.PORT, "0.0.0.0", () => {
       console.log(`===============================================`);
-      console.log(`🚀 NGi Connect Backend REST API running on:`);
+      console.log(`🚀 Nagarjuna Connect Backend REST API running on:`);
       console.log(`   http://localhost:${ENV.PORT} / http://127.0.0.1:${ENV.PORT}`);
       console.log(`   Health Check: http://127.0.0.1:${ENV.PORT}/api/health`);
       console.log(`===============================================`);

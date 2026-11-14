@@ -44,7 +44,7 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
     identifier: { type: String, required: true, unique: true, index: true, default: "default" },
     institutionShortName: { type: String, enum: ["ALL", "NCET", "NCMS"], default: "ALL" },
     subject: { type: String, default: "Registration Confirmed: {{registrationId}} - {{campusName}}" },
-    fromName: { type: String, default: "NGi Connect Admissions" },
+    fromName: { type: String, default: "Nagarjuna Connect Admissions" },
     fromEmail: { type: String, default: "" },
     replyTo: { type: String, default: "" },
     institutionHeader: { type: String, default: "NAGARJUNA GROUP OF INSTITUTIONS (NGI)" },
@@ -53,7 +53,7 @@ const EmailTemplateSchema = new Schema<IEmailTemplate>(
     welcomeMessage: {
       type: String,
       default:
-        "Thank you for registering with <strong>NGI Connect</strong> for <strong>{{campusName}}</strong>. Your application has been successfully logged into our central academic admissions registry.",
+        "Thank you for registering with <strong>Nagarjuna Connect</strong> for <strong>{{campusName}}</strong>. Your application has been successfully logged into our central academic admissions registry.",
     },
     highlightLabel: { type: String, default: "YOUR OFFICIAL REGISTRATION ID" },
     campusBadge: { type: String, default: "{{institution}} Campus • Academic Session {{academicYear}}" },

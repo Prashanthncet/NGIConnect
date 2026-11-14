@@ -19,7 +19,7 @@ export async function generateRegistrationsExcelBuffer(
   });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "NGi Connect Backend REST API";
+  workbook.creator = "Nagarjuna Connect Backend REST API";
   workbook.lastModifiedBy = adminName;
   workbook.created = new Date();
   workbook.modified = new Date();

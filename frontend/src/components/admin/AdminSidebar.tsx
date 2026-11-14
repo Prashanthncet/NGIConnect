@@ -158,7 +158,7 @@ export default function AdminSidebar({ registrationCount = 0 }: AdminSidebarProp
                   lineHeight: 1.2,
                 }}
               >
-                NGi Connect
+                Nagarjuna Connect
               </Typography>
               <Box
                 component="span"
@@ -392,7 +392,7 @@ export default function AdminSidebar({ registrationCount = 0 }: AdminSidebarProp
             sx={{ width: 30, height: 30, objectFit: "contain" }}
           />
           <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#FFFFFF" }}>
-            NGi Connect Admin
+            Nagarjuna Connect Admin
           </Typography>
         </Box>
         <IconButton

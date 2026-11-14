@@ -117,7 +117,7 @@ export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplat
 
   const welcomeMessage = replaceTokens(
     options.welcomeMessage ||
-    `Thank you for registering with <strong>NGI Connect</strong> for <strong>${defaultCampusName}</strong>. Your application has been successfully logged into our central academic admissions registry.`
+    `Thank you for registering with <strong>Nagarjuna Connect</strong> for <strong>${defaultCampusName}</strong>. Your application has been successfully logged into our central academic admissions registry.`
   );
 
   const highlightLabel = replaceTokens(
@@ -453,7 +453,7 @@ ${footerCopyright}
         ? `"${options.fromName}" <${options.fromEmail}>`
         : options.fromEmail ||
           process.env.SMTP_FROM ||
-          `"NGi Connect Admissions" <${process.env.SMTP_USER || "admissions@ngi.org.in"}>`,
+          `"Nagarjuna Connect Admissions" <${process.env.SMTP_USER || "admissions@ngi.org.in"}>`,
     replyTo:
       options.replyTo ||
       process.env.SMTP_REPLY_TO ||

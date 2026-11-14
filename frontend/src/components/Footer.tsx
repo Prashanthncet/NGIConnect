@@ -18,7 +18,7 @@ export default function Footer() {
                 />
               </div>
               <span className="text-2xl font-bold tracking-tight text-white">
-                NGi <span className="text-[#F28C28]">Connect</span>
+                Nagarjuna <span className="text-[#F28C28]">Connect</span>
               </span>
             </Link>
             <p className="text-sm text-slate-300 leading-relaxed max-w-sm">
@@ -99,7 +99,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/#benefits" className="hover:text-[#F28C28] transition-colors">
-                  Why NGi Connect
+                  Why Nagarjuna Connect
                 </Link>
               </li>
               <li>

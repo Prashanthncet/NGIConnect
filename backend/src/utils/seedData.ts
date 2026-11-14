@@ -112,6 +112,7 @@ export const defaultNcetFields: IFormField[] = [
       "Competitive Coding & Hackathons",
       "Research & Patents",
       "Campus Placements & Internships",
+      "Other",
     ],
     required: false,
     order: 8,
