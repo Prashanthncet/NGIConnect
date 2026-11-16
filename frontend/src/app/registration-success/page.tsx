@@ -43,8 +43,8 @@ function SuccessContent() {
     ? "Nagarjuna College of Engineering and Technology (NCET)"
     : "Nagarjuna College of Management Studies (NCMS)";
   const campusAffiliation = isNCET
-    ? "An Autonomous Institution • Affiliated to VTU, Belagavi • Approved by AICTE • NAAC Accredited 'A' Grade"
-    : "Affiliated to Bengaluru North University (BNU) • Approved by Govt. of Karnataka";
+    ? "An Autonomous Institution • Affiliated to VTU, Belagavi • Approved by AICTE • NAAC Accredited 'A+' Grade"
+    : "Affiliated to Bengaluru North University (BNU) • Approved by AICTE";
   const campusAddress = isNCET
     ? "Mudugurki, Venkatagirikote Post, Devanahalli, Bengaluru, Karnataka - 562110"
     : "Chikkaballapur Regional Campus, Bengaluru North University Affiliated, Karnataka - 562101";

@@ -11,7 +11,7 @@ const tests = [
     name: "Backend Root Service Info",
     url: `${BACKEND_URL}/`,
     expectedStatus: 200,
-    validate: (data) => data.service && data.service.includes("NGi Connect"),
+    validate: (data) => data.service && (data.service.includes("Nagarjuna Connect") || data.service.includes("NGi Connect")),
   },
   {
     name: "Backend Health Check Endpoint",

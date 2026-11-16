@@ -39,7 +39,7 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "About NGi", href: "/#about" },
+    { label: "About NGI", href: "/#about" },
     { label: "Institutions", href: "/#institutions" },
     { label: "Why Nagarjuna Connect", href: "/#benefits" },
     { label: "Contact", href: "/#contact" },
@@ -132,15 +132,18 @@ export default function Navbar() {
           "@media print": { display: "none !important" },
         }}
       >
-        <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4, lg: 5 } }}>
+        <Container maxWidth="xl" sx={{ px: { xs: 1.25, sm: 2.5, md: 4, lg: 5 } }}>
           <Toolbar
             disableGutters
             sx={{
-              height: { xs: 68, sm: 76, md: 84 },
-              minHeight: { xs: 68, sm: 76, md: 84 },
+              height: { xs: 60, sm: 72, md: 84 },
+              minHeight: { xs: 60, sm: 72, md: 84 },
               justifyContent: "space-between",
               alignItems: "center",
-              gap: 2,
+              gap: { xs: 1, sm: 1.5, md: 2 },
+              width: "100%",
+              maxWidth: "100%",
+              overflow: "hidden",
             }}
           >
             {/* Left: Brand Identity with Official NGi Logo & NAAC A+ Accreditation */}
@@ -148,8 +151,9 @@ export default function Navbar() {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: { xs: 1.5, sm: 2, lg: 2.5 },
-                flexShrink: 0,
+                gap: { xs: 0.75, sm: 1.5, lg: 2.5 },
+                minWidth: 0,
+                flexShrink: 1,
               }}
             >
               {/* Brand Link */}
@@ -159,10 +163,11 @@ export default function Navbar() {
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: { xs: 1.25, sm: 1.5 },
+                  gap: { xs: 0.75, sm: 1.25 },
                   textDecoration: "none",
                   color: "inherit",
-                  flexShrink: 0,
+                  flexShrink: 1,
+                  minWidth: 0,
                 }}
               >
                 <Box
@@ -170,19 +175,19 @@ export default function Navbar() {
                   src="/images/ngi-header-logo.png"
                   alt="NGI Logo"
                   sx={{
-                    width: { xs: 44, sm: 52 },
-                    height: { xs: 44, sm: 52 },
+                    width: { xs: 34, sm: 44, md: 52 },
+                    height: { xs: 34, sm: 44, md: 52 },
                     objectFit: "contain",
                     filter: "drop-shadow(0 2px 4px rgba(16,43,70,0.08))",
                     flexShrink: 0,
                   }}
                 />
-                <Box sx={{ display: "flex", flexDirection: "column", flexShrink: 0 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, flexShrink: 1 }}>
                   <Typography
                     variant="h6"
                     sx={{
                       fontWeight: 800,
-                      fontSize: { xs: "1.05rem", sm: "1.25rem", lg: "1.35rem" },
+                      fontSize: { xs: "0.92rem", sm: "1.15rem", lg: "1.35rem" },
                       letterSpacing: "-0.02em",
                       lineHeight: 1.15,
                       whiteSpace: "nowrap",
@@ -193,7 +198,7 @@ export default function Navbar() {
                   <Typography
                     variant="caption"
                     sx={{
-                      fontSize: { xs: "0.625rem", sm: "0.7rem" },
+                      fontSize: { xs: "0.52rem", sm: "0.65rem", md: "0.7rem" },
                       color: "#64748B",
                       fontWeight: 600,
                       textTransform: "uppercase",
@@ -211,24 +216,24 @@ export default function Navbar() {
                 orientation="vertical"
                 flexItem
                 sx={{
-                  height: 38,
+                  height: { xs: 24, sm: 34, md: 38 },
                   my: "auto",
                   borderColor: "#E2E8F0",
-                  display: { xs: "none", sm: "block" },
+                  display: { xs: "block", sm: "block" },
                 }}
               />
 
-              {/* NAAC A+ Accreditation Seal - Bigger and Beside Brand */}
+              {/* NAAC A+ Accreditation Seal - Sized properly for mobile */}
               <Box
                 component="img"
                 src="/images/naac-a-plus-logo.png"
                 alt="NAAC A+ Accredited"
                 sx={{
-                  height: { xs: 38, sm: 50, md: 56 },
+                  height: { xs: 28, sm: 40, md: 54 },
                   width: "auto",
                   objectFit: "contain",
                   flexShrink: 0,
-                  filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.08))",
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.08))",
                 }}
               />
             </Box>
@@ -305,8 +310,15 @@ export default function Navbar() {
                 </Button>
               </Box>
             ) : (
-              /* Mobile / Tablet Controls (< md) */
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              /* Mobile / Tablet Controls (< md) - Compact & Zero-Overflow Guaranteed */
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: { xs: 0.75, sm: 1.25 },
+                  flexShrink: 0,
+                }}
+              >
                 <Button
                   component={Link}
                   href="/register"
@@ -314,12 +326,15 @@ export default function Navbar() {
                   color="warning"
                   size="small"
                   sx={{
-                    fontSize: { xs: "0.75rem", sm: "0.825rem" },
-                    px: { xs: 1.75, sm: 2.25 },
-                    py: 0.75,
-                    minHeight: 38,
-                    borderRadius: "10px",
+                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                    px: { xs: 1.25, sm: 2 },
+                    py: { xs: 0.5, sm: 0.75 },
+                    minHeight: { xs: 32, sm: 38 },
+                    borderRadius: "8px",
                     fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    boxShadow: "0 2px 8px rgba(242,140,40,0.3)",
                   }}
                 >
                   Register
@@ -331,13 +346,14 @@ export default function Navbar() {
                   sx={{
                     color: "#102B46",
                     bgcolor: "rgba(16, 43, 70, 0.05)",
-                    width: 44,
-                    height: 44, // Touch target
-                    borderRadius: "10px",
+                    width: { xs: 36, sm: 42 },
+                    height: { xs: 36, sm: 42 }, // Responsive Touch target
+                    borderRadius: "8px",
+                    flexShrink: 0,
                     "&:hover": { bgcolor: "rgba(16, 43, 70, 0.1)" },
                   }}
                 >
-                  <MenuIcon />
+                  <MenuIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </IconButton>
               </Box>
             )}

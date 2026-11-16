@@ -99,11 +99,12 @@ async function runApiTests() {
         responses: {
           full_name: "Automated Test Candidate",
           email: testCandidateEmail,
-          phone: "+91 99887 76655",
-          category: "Prospective Student",
+          phone: "9988776655",
+          puc_college: "Bangalore National PU College",
+          puc_stream: "Science - PCMC",
+          academic_status: "2nd PUC / 12th Appearing (2026)",
           department: "Computer Science & Engineering (CSE)",
-          academic_interests: ["Artificial Intelligence & GenAI"],
-          statement_of_purpose: "Automated API verification submission.",
+          city: "Bengaluru",
         },
       }),
     });

@@ -10,6 +10,10 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     const conn = await mongoose.connect(ENV.MONGODB_URI, {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 30000,
+      maxPoolSize: 100,
+      minPoolSize: 10,
     });
     console.log(`[Database] MongoDB connected successfully to ${mongoose.connection.host}`);
     return conn;

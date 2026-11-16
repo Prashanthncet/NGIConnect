@@ -104,7 +104,7 @@ export default function Footer() {
               </li>
               <li>
                 <a href="https://ngi.org.in/" target="_blank" rel="noopener noreferrer" className="hover:text-[#F28C28] transition-colors flex items-center gap-1">
-                  NGi Central Portal <ExternalLink className="w-3 h-3" />
+                  Nagarjuna Central Portal <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
             </ul>
@@ -113,7 +113,7 @@ export default function Footer() {
 
         {/* Bottom Copyright & Disclaimer */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} Nagarjuna Group of Institutions (NGi). All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} Nagarjuna Group of Institutions. All Rights Reserved.</p>
           <div className="flex items-center space-x-6">
             <span className="hover:text-white transition-colors cursor-pointer">Institutional Privacy Policy</span>
             <span className="hover:text-white transition-colors cursor-pointer">Terms of Engagement</span>

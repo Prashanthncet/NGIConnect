@@ -1,8 +1,96 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { IFormField } from "@/types";
-import { UploadCloud, CheckSquare, Calendar, Link as LinkIcon, FileText } from "lucide-react";
+import { UploadCloud, CheckSquare, Calendar, Link as LinkIcon, FileText, ChevronDown, Check } from "lucide-react";
+
+interface CustomDropdownProps {
+  options?: string[];
+  value: any;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  error?: string;
+}
+
+function CustomDropdown({ options, value, onChange, placeholder, error }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  const selectedValue = value || "";
+
+  return (
+    <div ref={dropdownRef} className="relative w-full max-w-full">
+      {/* Trigger Button - Always clamped to 100% container width */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        className={`w-full px-4 py-2.5 rounded-xl border ${
+          error
+            ? "border-red-400 ring-1 ring-red-400"
+            : isOpen
+            ? "border-[#174A70] ring-2 ring-[#174A70]/20"
+            : "border-slate-200 hover:border-slate-300"
+        } bg-white text-sm text-left flex items-center justify-between gap-2 transition cursor-pointer select-none`}
+      >
+        <span className={`block truncate ${selectedValue ? "font-semibold text-slate-800" : "text-slate-400"}`}>
+          {selectedValue || placeholder || "-- Please Select --"}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
+            isOpen ? "rotate-180 text-[#174A70]" : ""
+          }`}
+        />
+      </button>
+
+      {/* Embedded Dropdown Menu - Strictly bounded within container width */}
+      {isOpen && (
+        <div
+          role="listbox"
+          className="absolute z-50 left-0 right-0 top-full mt-1.5 w-full max-w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100"
+        >
+          {options && options.length > 0 ? (
+            options.map((opt, i) => {
+              const isSelected = value === opt;
+              return (
+                <div
+                  key={i}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(opt);
+                    setIsOpen(false);
+                  }}
+                  className={`px-3.5 py-2.5 text-xs sm:text-sm cursor-pointer transition flex items-center justify-between gap-2 text-left ${
+                    isSelected
+                      ? "bg-orange-50/80 font-bold text-[#102B46]"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-[#102B46]"
+                  }`}
+                >
+                  <span className="leading-snug break-words flex-1">{opt}</span>
+                  {isSelected && <Check className="w-4 h-4 text-[#F28C28] shrink-0 ml-2" />}
+                </div>
+              );
+            })
+          ) : (
+            <div className="px-4 py-3 text-xs text-slate-400 text-center">No options available</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface FormFieldRendererProps {
   field: IFormField;
@@ -33,7 +121,7 @@ export default function FormFieldRenderer({ field, value, onChange, error }: For
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-slate-300 transition-all space-y-3">
+    <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs hover:border-slate-300 transition-all space-y-3">
       {/* Label and Required asterisk */}
       <div>
         <label className="block text-sm font-semibold text-slate-800">
@@ -123,22 +211,15 @@ export default function FormFieldRenderer({ field, value, onChange, error }: For
           </div>
         )}
 
-        {/* Dropdown / Select */}
+        {/* Dropdown / Select - Custom Mobile-Safe Dropdown */}
         {field.type === "dropdown" && (
-          <select
-            value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
-            className={`w-full px-4 py-2.5 rounded-xl border ${
-              error ? "border-red-400 focus:ring-red-400" : "border-slate-200 focus:border-[#174A70] focus:ring-[#174A70]"
-            } text-sm bg-white focus:outline-hidden focus:ring-2 focus:ring-opacity-20 transition`}
-          >
-            <option value="">-- Please Select --</option>
-            {field.options?.map((opt, i) => (
-              <option key={i} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
+          <CustomDropdown
+            options={field.options}
+            value={value}
+            onChange={(val) => onChange(val)}
+            placeholder={field.placeholder || "-- Please Select --"}
+            error={error}
+          />
         )}
 
         {/* Single Choice / Radio Buttons */}

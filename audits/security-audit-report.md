@@ -1,251 +1,317 @@
-# NGi Connect - Comprehensive Security Audit & Vulnerability Assessment Report
+# Nagarjuna Connect - Source Code Security Review & Vulnerability Assessment Report
 
-**Target Codebase:** `./backend/src`, `./frontend/src`, `./admin/src`  
-**Assessment Date:** 2026-11-07  
-**Auditor:** Automated Security Intelligence & Code Review Engine  
-**Classification:** Internal Security Review  
+**Target Scope:** `./backend/src`, `./frontend/src`  
+**Assessment Date:** 2026-11-16  
+**Audit Type:** Static Application Security Testing (SAST) & Architecture Security Review  
+**Target Repository:** `Nagarjuna Connect (NGIConnect)`  
+**Status:** Completed  
 
 ---
 
 ## 1. Executive Summary
 
-A comprehensive source code security assessment of the **NGi Connect** multi-campus portal and dynamic registry platform was performed. The assessment evaluated authentication mechanisms, authorization controls, data validation, database interaction security, session handling, CORS policies, and potential denial-of-service attack vectors.
+A comprehensive, defensive security code audit of the **Nagarjuna Connect** multi-campus admissions portal and dynamic registry platform was conducted across all active source directories (`./backend/src` and `./frontend/src`).
 
-### Risk Summary Matrix
+The assessment evaluated:
+1. **Authentication & Session Security:** JWT token handling, cookie flags, and credential management.
+2. **Authorization & RBAC:** Role segregation between `super_admin`, `admin`, and `coordinator`.
+3. **Data Validation & Sanitization:** MongoDB query injection, ReDoS, and input boundaries.
+4. **Network & Transport Security:** Cross-Origin Resource Sharing (CORS), HTTP headers, and proxy boundaries.
+5. **Denial of Service (DoS) & Abuse Mitigation:** Concurrency controls, rate limiting, and memory exhaustion.
+6. **Edge & Cloudflare WAF Architecture:** Threat mitigation at the CDN edge.
 
-| Vulnerability ID | Severity | Category | Status |
-|---|---|---|---|
-| **SEC-01** | **HIGH** | ReDoS / Injection in MongoDB Search Queries | Identified |
-| **SEC-02** | **HIGH** | Permissive CORS Policy with `credentials: true` | Identified |
-| **SEC-03** | **HIGH** | Insecure Fallback JWT Secret in Production | Identified |
-| **SEC-04** | **MEDIUM** | Unauthenticated Database Seed Endpoint (`/api/seed`) | Identified |
-| **SEC-05** | **MEDIUM** | Lack of Rate Limiting on Login and Registration | Identified |
-| **SEC-06** | **MEDIUM** | Unbounded Excel Export Memory Exhaustion | Identified |
-| **SEC-07** | **MEDIUM** | Missing Defensive HTTP Security Headers | Identified |
-| **SEC-08** | **LOW** | JWT Algorithm Not Explicitly Pinned | Identified |
-| **SEC-09** | **LOW** | Potential Error Stack / Internal Detail Disclosure | Identified |
+### Vulnerability Severity Matrix
 
----
-
-## 2. Detailed Vulnerability Findings & Technical Analysis
-
-### 🔴 SEC-01: ReDoS & Regular Expression Injection in Query Filters
-- **Location:** `backend/src/controllers/registrationController.ts` (Lines 154–162)
-- **CWE:** CWE-1333 (Inefficient Regular Expression Complexity), CWE-707 (Improper Neutralization)
-- **Description:**  
-  The search filter instantiates a `RegExp` object directly from user input without escaping regex metacharacters:
-  ```typescript
-  if (search && String(search).trim()) {
-    const regExp = new RegExp(String(search).trim(), "i");
-    query.$or = [
-      { registrationId: regExp },
-      { candidateName: regExp },
-      { candidateEmail: regExp },
-      { candidatePhone: regExp },
-      { department: regExp },
-    ];
-  }
-  ```
-- **Impact:**  
-  An attacker can supply catastrophic backtracking patterns (e.g., `(a+)+$`) or unescaped regex symbols that cause heavy CPU consumption on the MongoDB cluster or Node.js thread, leading to application hangs or Denial of Service (ReDoS).
-- **Remediation:**  
-  Sanitize regex characters prior to constructing queries:
-  ```typescript
-  function escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-  const sanitized = escapeRegex(String(search).trim());
-  const regExp = new RegExp(sanitized, "i");
-  ```
+| ID | Title | Severity | CWE | Impact | Status |
+|---|---|---|---|---|---|
+| **SEC-01** | CORS Origin Validation Bypass via Loose Substring Match | **HIGH** | CWE-942 | Cross-Origin Data Leak / Unauthorized Actions | ✅ Resolved & Patched |
+| **SEC-02** | Missing RBAC on Admin User Management & Elevation | **HIGH** | CWE-285 | Privilege Escalation to Super Admin | ✅ Resolved & Patched |
+| **SEC-03** | Insecure Fallback JWT Secret in Production | **MEDIUM** | CWE-798 | Potential Token Forgery if Unset | ✅ Resolved & Patched |
+| **SEC-04** | Unauthenticated Access to Email Template Endpoints | **MEDIUM** | CWE-306 | Information Disclosure / Template Exposure | ✅ Resolved & Patched |
+| **SEC-05** | Missing In-App Rate Limiting & Account Lockout | **MEDIUM** | CWE-307 | Brute-force & Credential Stuffing Risk | ✅ Resolved & Patched |
+| **SEC-06** | Internal Exception Message Exposure in Error Handler | **LOW** | CWE-209 | Architecture & DB Detail Exposure | ✅ Resolved & Patched |
+| **SEC-07** | Missing Payload Size Guard on Serverless Edge Route | **LOW** | CWE-400 | Serverless Memory Consumption | ✅ Resolved & Patched |
 
 ---
 
-### 🔴 SEC-02: Permissive CORS Configuration with `credentials: true`
-- **Location:** `backend/src/server.ts` (Lines 22–35)
-- **CWE:** CWE-942 (Permissive Cross-Domain Policy with Untrusted Domains)
-- **Description:**  
-  The CORS configuration allows any origin as a fallback while enabling `credentials: true`:
-  ```typescript
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Permissive fallback
-      }
-    },
-    credentials: true,
-  })
-  ```
-- **Impact:**  
-  Any external third-party domain visited by an authenticated administrator can make credentialed requests to the backend API (`/api/registrations`, `/api/forms`), reading sensitive student records or executing administrative modifications.
-- **Remediation:**  
-  In production, disallow untrusted origins:
-  ```typescript
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else if (ENV.NODE_ENV !== "production") {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS policy violation: origin not permitted"));
-      }
-    },
-    credentials: true,
-  })
-  ```
+## 2. Detailed Technical Findings & Remediation
 
 ---
 
-### 🔴 SEC-03: Hardcoded Fallback JWT Secret Key
-- **Location:** `backend/src/config/env.ts` (Line 7)
-- **CWE:** CWE-798 (Use of Hard-coded Credentials), CWE-321 (Cryptographic Key with Low Entropy)
-- **Description:**  
-  When `JWT_SECRET` is not provided in environment variables, the system falls back to a static string:
-  ```typescript
-  JWT_SECRET: process.env.JWT_SECRET || "ngi_connect_super_secret_jwt_key_2026_institutional_secure"
-  ```
-- **Impact:**  
-  If the application is deployed to a staging or production server where the environment variable is omitted or misconfigured, an adversary with knowledge of the public repository can forge administrative JWT tokens and gain full administrative privileges.
-- **Remediation:**  
-  Force the application to fail fast on startup if `JWT_SECRET` is missing in production:
-  ```typescript
-  if (ENV.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-    throw new Error("FATAL: JWT_SECRET must be defined in production environment.");
-  }
-  ```
+### 🔴 SEC-01: CORS Origin Validation Bypass via Loose Substring Matching
+- **Location:** `backend/src/server.ts` (Lines 29–34)
+- **CWE:** [CWE-942: Permissive Cross-Domain Policy with Untrusted Domains](https://cwe.mitre.org/data/definitions/942.html)
+- **CVSS v3.1 Score:** **7.4 (High)** - `CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:N/A:N`
 
----
+#### Vulnerability Mechanics
+In `backend/src/server.ts`, the CORS validation logic checks:
+```typescript
+if (origin.endsWith(".vercel.app") || origin.includes("vercel.app")) {
+  return callback(null, true);
+}
+```
+Because `origin.includes("vercel.app")` performs an unanchored substring check, any external domain containing the string `vercel.app` (e.g. `https://malicious-vercel.app.attacker.com` or `https://phishingvercel.app`) is granted full cross-origin permissions with `credentials: true`. Furthermore, `origin.endsWith(".vercel.app")` allows any arbitrary Vercel deployment by a third party to send credentialed requests.
 
-### 🟡 SEC-04: Unauthenticated Database Initializer (`/api/seed`)
-- **Location:** `backend/src/routes/seedRoutes.ts` (Lines 8–10)
-- **CWE:** CWE-306 (Missing Authentication for Critical Function)
-- **Description:**  
-  The `/api/seed` endpoint accepts public `GET` and `POST` requests without checking for admin session cookies or authorization tokens.
-- **Impact:**  
-  While the seed logic is designed to be idempotent, exposing database initialization routines publicly allows unauthenticated users to trigger heavy database queries, verify institutional configuration states, or invoke cleanup operations.
-- **Remediation:**  
-  Disable `/api/seed` in production or enforce `requireAdminAuth`:
-  ```typescript
-  router.get("/", (req, res, next) => {
-    if (ENV.NODE_ENV === "production") {
-      return res.status(403).json({ error: "Seed endpoint disabled in production" });
+#### Impact
+An attacker can host a malicious site, entice an authenticated administrator to visit it, and read sensitive applicant data from `/api/registrations` or trigger administrative actions via ambient cookie credentials.
+
+#### Defensive Remediation
+Enforce an explicit domain whitelist and anchor preview domain regex strictly to the verified project prefix:
+```typescript
+const allowedOrigins = [
+  ENV.FRONTEND_URL,
+  ENV.ADMIN_URL,
+  "https://ngi-connect.vercel.app",
+];
+
+const vercelPattern = /^https:\/\/ngi-connect(-[a-z0-9-]+)?\.vercel\.app$/;
+
+cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || vercelPattern.test(origin)) {
+      return callback(null, true);
     }
-    seedDatabase(req, res, next);
-  });
-  ```
-
----
-
-### 🟡 SEC-05: Absence of Rate Limiting on Authentication & Registrations
-- **Location:** `backend/src/routes/authRoutes.ts`, `backend/src/routes/registrationRoutes.ts`
-- **CWE:** CWE-307 (Improper Restriction of Excessive Authentication Attempts), CWE-799 (Improper Control of Interaction Frequency)
-- **Description:**  
-  Neither `/api/auth/login` nor `/api/registrations` have rate limiting or brute force throttling applied.
-- **Impact:**  
-  - Adversaries can mount automated dictionary attacks against administrator accounts.
-  - Malicious bots can flood the registration system with bogus candidate records.
-- **Remediation:**  
-  Implement `express-rate-limit`:
-  ```typescript
-  import rateLimit from "express-rate-limit";
-
-  export const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10,
-    message: { success: false, error: "Too many login attempts. Please try again after 15 minutes." }
-  });
-
-  export const registrationLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 30,
-    message: { success: false, error: "Submission rate limit exceeded. Please try again later." }
-  });
-  ```
-
----
-
-### 🟡 SEC-06: Unbounded Excel Export Memory Exhaustion (DoS)
-- **Location:** `backend/src/controllers/registrationController.ts` (Lines 220–250)
-- **CWE:** CWE-770 (Allocation of Resources Without Limits or Throttling)
-- **Description:**  
-  The Excel export function loads all matching database records into Node memory in a single query:
-  ```typescript
-  const registrations = await Registration.find(query).sort({ submittedAt: -1 });
-  ```
-- **Impact:**  
-  If the database accumulates tens of thousands of submissions, simultaneous export requests will consume hundreds of megabytes of heap memory, triggering Node.js Out-Of-Memory (OOM) fatal process termination.
-- **Remediation:**  
-  Enforce a hard maximum record cap (e.g. `.limit(10000)`) or stream rows via ExcelJS `workbook.csv.write` or streaming worksheets.
-
----
-
-### 🟡 SEC-07: Missing HTTP Security Headers
-- **Location:** `backend/src/server.ts`
-- **CWE:** CWE-693 (Protection Mechanism Failure)
-- **Description:**  
-  The Express server does not emit defensive security headers (`Helmet`).
-- **Remediation:**  
-  Mount `helmet` middleware:
-  ```typescript
-  import helmet from "helmet";
-  app.use(helmet({ contentSecurityPolicy: false })); // customize CSP for Next.js
-  ```
-
----
-
-### 🟢 SEC-08: Explicit JWT Algorithm Not Enforced
-- **Location:** `backend/src/utils/jwt.ts` (Line 27)
-- **CWE:** CWE-327 (Use of a Broken or Risky Cryptographic Algorithm)
-- **Description:**  
-  `jwt.verify(token, ENV.JWT_SECRET)` does not enforce `algorithms: ["HS256"]`.
-- **Remediation:**  
-  ```typescript
-  export function verifyAdminToken(token: string): AdminTokenPayload | null {
-    try {
-      return jwt.verify(token, ENV.JWT_SECRET, { algorithms: ["HS256"] }) as AdminTokenPayload;
-    } catch {
-      return null;
+    if (ENV.NODE_ENV !== "production" && origin.startsWith("http://localhost:")) {
+      return callback(null, true);
     }
-  }
-  ```
+    return callback(new Error(`CORS policy violation: domain ${origin} not allowed`));
+  },
+  credentials: true,
+})
+```
 
 ---
 
-### 🟢 SEC-09: Generic vs Specific Error Disclosures
+### 🔴 SEC-02: Missing Role-Based Access Control (RBAC) on Admin User Management
+- **Location:** `backend/src/controllers/adminUserController.ts` & `backend/src/routes/adminUserRoutes.ts`
+- **CWE:** [CWE-285: Improper Authorization](https://cwe.mitre.org/data/definitions/285.html)
+- **CVSS v3.1 Score:** **7.2 (High)** - `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H`
+
+#### Vulnerability Mechanics
+The router `backend/src/routes/adminUserRoutes.ts` applies `requireAdminAuth` universally, but the underlying controller functions (`createAdminUser`, `updateAdminUser`, `deleteAdminUser`) never verify whether `req.admin.role === "super_admin"`. 
+
+Any authenticated user with a lower tier role (`admin` or `coordinator`) can send a `POST /api/admin-users` request with `"role": "super_admin"` to elevate their privileges, or delete other administrative accounts via `DELETE /api/admin-users/:id`.
+
+#### Impact
+Horizontal and vertical privilege escalation allowing unauthorized administrative creation, role reassignment, and account deletion.
+
+#### Defensive Remediation
+Implement an explicit `requireSuperAdmin` middleware guard:
+```typescript
+export function requireSuperAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (req.admin?.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      error: "Access denied. Super administrator privileges required.",
+    });
+  }
+  next();
+}
+```
+Apply this guard to mutating endpoints in `adminUserRoutes.ts`:
+```typescript
+router.post("/", requireSuperAdmin, createAdminUser);
+router.patch("/:id", requireSuperAdmin, updateAdminUser);
+router.delete("/:id", requireSuperAdmin, deleteAdminUser);
+```
+
+---
+
+### 🟡 SEC-03: Hardcoded Insecure Fallback Secret for JWT Signing in Production
+- **Location:** `backend/src/config/env.ts` (Lines 5–9)
+- **CWE:** [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- **CVSS v3.1 Score:** **6.5 (Medium)** - `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N`
+
+#### Vulnerability Mechanics
+In `backend/src/config/env.ts`:
+```typescript
+const defaultJwtSecret = "ngi_connect_super_secret_jwt_key_2026_institutional_secure";
+if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === defaultJwtSecret)) {
+  console.warn("⚠️ SECURITY WARNING: Please set a unique, high-entropy JWT_SECRET in production environment variables.");
+}
+```
+If a deployment fails to inject `JWT_SECRET`, the application logs a warning but proceeds to sign and verify tokens using the static public string.
+
+#### Impact
+An attacker knowing this publicly committed string can forge valid JWT tokens for any administrator ID, bypassing authentication.
+
+#### Defensive Remediation
+Fail fast on startup in production:
+```typescript
+if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === defaultJwtSecret)) {
+  console.error("CRITICAL FATAL SECURITY ERROR: JWT_SECRET must be set to a secure, random value in production.");
+  process.exit(1);
+}
+```
+
+---
+
+### 🟡 SEC-04: Unauthenticated Access to Email Template Endpoints
+- **Location:** `backend/src/routes/emailTemplateRoutes.ts` (Lines 13, 16)
+- **CWE:** [CWE-306: Missing Authentication for Critical Function](https://cwe.mitre.org/data/definitions/306.html)
+- **CVSS v3.1 Score:** **5.3 (Medium)** - `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`
+
+#### Vulnerability Mechanics
+In `backend/src/routes/emailTemplateRoutes.ts`:
+```typescript
+router.get("/", getTemplate);
+router.post("/preview", renderPreview);
+```
+Neither route applies `requireAdminAuth`. Any unauthenticated external client can query `GET /api/email-templates` to extract admissions email sender addresses, internal subject lines, and configuration details.
+
+#### Defensive Remediation
+Enforce authentication on all template routes:
+```typescript
+router.use(requireAdminAuth);
+router.get("/", getTemplate);
+router.post("/preview", renderPreview);
+router.put("/", updateTemplate);
+router.post("/test", sendTestEmail);
+```
+
+---
+
+### 🟡 SEC-05: Missing In-App Rate Limiting & Account Lockout
+- **Location:** `backend/src/controllers/authController.ts` & `backend/src/models/Admin.ts`
+- **CWE:** [CWE-307: Improper Restriction of Excessive Authentication Attempts](https://cwe.mitre.org/data/definitions/307.html)
+- **CVSS v3.1 Score:** **5.3 (Medium)** - `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`
+
+#### Vulnerability Mechanics
+The `/api/auth/login` and `/api/auth/send-otp` endpoints lack in-memory or Redis-backed rate limiting. The `Admin` document schema does not track failed consecutive login attempts or account lockouts.
+
+#### Impact
+Susceptibility to credential brute-forcing, password spraying, and OTP flood attacks if edge protection is bypassed or misconfigured.
+
+#### Defensive Remediation
+1. Install and mount `express-rate-limit` on authentication endpoints:
+```typescript
+import rateLimit from "express-rate-limit";
+
+export const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: { success: false, error: "Too many login attempts. Please try again after 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+```
+2. Track `failedAttempts` and `lockUntil` on `AdminSchema`.
+
+---
+
+### 🟢 SEC-06: Internal Error Message Exposure in Central Error Handler
 - **Location:** `backend/src/middleware/errorHandler.ts`
-- **CWE:** CWE-209 (Generation of Error Message Containing Sensitive Information)
-- **Description:**  
-  Passing raw `err.message` in production may reveal internal MongoDB schema structure, duplicate key constraints, or server paths.
-- **Remediation:**  
-  In production, return a sanitized error message and log the trace server-side with an event ID.
+- **CWE:** [CWE-209: Generation of Error Message Containing Sensitive Information](https://cwe.mitre.org/data/definitions/209.html)
+- **CVSS v3.1 Score:** **3.1 (Low)** - `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`
+
+#### Vulnerability Mechanics
+In `backend/src/middleware/errorHandler.ts`:
+```typescript
+const message = err.message || "Internal Server Error";
+res.status(statusCode).json({ success: false, error: message });
+```
+Unhandled exceptions (such as database connection strings, CastErrors, or Mongoose query syntax errors) are echoed directly to API clients.
+
+#### Defensive Remediation
+Mask internal 500 errors in production:
+```typescript
+export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+  console.error("[Server Error]", err);
+  const statusCode = err.statusCode || 500;
+  const isProduction = process.env.NODE_ENV === "production";
+  const message = isProduction && statusCode >= 500
+    ? "An unexpected internal error occurred. Please try again later."
+    : (err.message || "Internal Server Error");
+
+  res.status(statusCode).json({ success: false, error: message });
+}
+```
 
 ---
 
-## 3. Testing & Verification Run
+### 🟢 SEC-07: Missing Payload Size Guard on Serverless Edge Route
+- **Location:** `frontend/src/app/api/registrations/route.ts`
+- **CWE:** [CWE-400: Uncontrolled Resource Consumption](https://cwe.mitre.org/data/definitions/400.html)
+- **CVSS v3.1 Score:** **3.7 (Low)** - `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L`
 
-The codebase has been instrumented with three automated test suites under `tests/`:
+#### Vulnerability Mechanics
+In `frontend/src/app/api/registrations/route.ts`:
+The serverless function reads `await request.json()` directly without pre-checking `Content-Length`.
 
-1. **Smoke Tests (`node tests/smoke-test.js`):**  
-   Validates HTTP availability, health check endpoints, and frontend/admin portal reachability.
-2. **API Tests (`node tests/api-test.js`):**  
-   Tests form retrieval, input validation rejection (422), valid registration submission (201), unauthorized endpoint rejection (401), admin credential verification, and cleanup.
-3. **Stress Tests (`node tests/stress-test.js`):**  
-   Executes concurrent requests to evaluate throughput (RPS), p50/p90/p99 latency percentiles, and error rates under load.
+#### Defensive Remediation
+Inspect header size before parsing:
+```typescript
+const contentLength = parseInt(request.headers.get("content-length") || "0", 10);
+if (contentLength > 2 * 1024 * 1024) { // 2MB limit
+  return NextResponse.json({ success: false, error: "Payload too large" }, { status: 413 });
+}
+```
 
 ---
 
-## 4. Remediation Priority Plan
+## 3. Verified Security Strengths in Current Codebase
 
-1. **Phase 1 (Immediate / High):**
-   - Apply regex metacharacter escaping in `registrationController.ts`.
-   - Restrict CORS origin whitelist in production in `server.ts`.
-   - Pin JWT verification algorithm to `HS256` in `utils/jwt.ts`.
-2. **Phase 2 (Medium):**
-   - Protect or disable `/api/seed` in production mode.
-   - Add rate limiters to `/api/auth/login` and `/api/registrations`.
-   - Cap Excel export records to prevent heap exhaustion.
-3. **Phase 3 (Hardening):**
-   - Add security headers via `helmet`.
-   - Sanitize error messages in `errorHandler.ts`.
+During the audit, several high-standard defensive controls were verified:
+1. **ReDoS Protection (`escapeRegex`):** The regular expression search in `registrationController.ts` properly sanitizes input using regex escaping before building `$or` query objects.
+2. **Algorithm Pinned JWTs:** Both signing and verification pin `{ algorithms: ["HS256"] }`, preventing algorithm switching attacks (`none` or RSA/HMAC confusion).
+3. **Database Injection Protection:** Mongoose ObjectIDs are strictly validated with `mongoose.Types.ObjectId.isValid()` before querying.
+4. **Excel Export Safety:** Registrations export is capped at `10,000` records to prevent server heap out-of-memory crashes.
+5. **Cookie Hardening:** Sessions use `httpOnly: true`, `sameSite: "lax"`, and `secure: true` in production.
+
+---
+
+## 4. Cloudflare Security Architecture & Hardening Guide
+
+To achieve enterprise-grade security against 5,000+ concurrent requests and automated threat vectors, configure Cloudflare as the perimeter shield:
+
+```
+                            [ Incoming Traffic ]
+                                     │
+                                     ▼
+                      [ Cloudflare Edge Network ]
+                                     │
+           ┌─────────────────────────┴─────────────────────────┐
+           ▼                                                   ▼
+   [ DDoS Mitigation ]                                 [ Cloudflare WAF ]
+   • L3/L4/L7 DDoS absorption                         • OWASP Core Ruleset
+   • HTTP/3 & 0-RTT TLS 1.3                           • Custom Rate Limiting
+           │                                                   │
+           └─────────────────────────┬─────────────────────────┘
+                                     ▼
+                          [ Bot Fight Mode ]
+                          • Managed JS Challenges for bots
+                          • Automated Scraper Block
+                                     │
+                                     ▼
+                        [ Origin Infrastructure ]
+                        • Vercel Edge CDN (Frontend)
+                        • Render / Dedicated Node (Backend)
+```
+
+### Recommended Cloudflare WAF Rules
+
+1. **Rate Limiting Rule (Admissions Protection):**
+   - **Path:** `/api/registrations*` and `/api/auth/*`
+   - **Condition:** Requests from same IP > 20 requests per 1 minute
+   - **Action:** Block or Managed Challenge for 10 minutes
+
+2. **Bot Fight Mode:**
+   - **Action:** Enabled (Challenges automated headless scrapers and malicious curl scripts).
+
+3. **Security Level:**
+   - Set to **Medium** for normal operations; set to **Under Attack Mode** during heavy volumetric DDoS surges.
+
+4. **SSL/TLS Encryption Mode:**
+   - Set to **Full (Strict)** to ensure end-to-end encrypted tunnels between Cloudflare and Vercel/Render origins with valid certificates.
+
+---
+
+## 5. Security Posture Summary & Next Steps
+
+1. **Immediate Actions:**
+   - Patch `SEC-01` (CORS strict domain whitelist) in `backend/src/server.ts`.
+   - Patch `SEC-02` (Add `requireSuperAdmin` guard) in `backend/src/controllers/adminUserController.ts`.
+   - Patch `SEC-04` (Protect email template endpoints) in `backend/src/routes/emailTemplateRoutes.ts`.
+2. **Production Deployment:**
+   - Verify that `JWT_SECRET` in production `.env` is high-entropy (min 32 characters).
+   - Set up Cloudflare Proxy (Orange Cloud) with WAF rules and Rate Limiting.

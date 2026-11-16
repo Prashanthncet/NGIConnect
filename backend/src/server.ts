@@ -18,21 +18,24 @@ const allowedOrigins = [
   "http://127.0.0.1:3000",
   "http://127.0.0.1:3001",
   "http://127.0.0.1:3002",
+  "https://ngi-connect.vercel.app",
 ];
+
+// Strictly anchored to verified project Vercel deployments: ngi-connect.vercel.app or ngi-connect-*.vercel.app
+const vercelProjectPattern = /^https:\/\/ngi-connect(-[a-z0-9_-]+)?\.vercel\.app$/i;
 
 app.use(
   cors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server Next.js rewrites)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (mobile apps, server-to-server Next.js rewrites)
+      if (!origin) {
         return callback(null, true);
       }
-      // Automatically allow Vercel production and preview domains
-      if (origin.endsWith(".vercel.app") || origin.includes("vercel.app")) {
+      if (allowedOrigins.includes(origin) || vercelProjectPattern.test(origin)) {
         return callback(null, true);
       }
-      if (ENV.NODE_ENV !== "production") {
-        return callback(null, true); // Dev-friendly permissive fallback in development
+      if (ENV.NODE_ENV !== "production" && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"))) {
+        return callback(null, true);
       }
       callback(new Error(`CORS policy violation: domain ${origin} not allowed`));
     },

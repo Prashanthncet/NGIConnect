@@ -8,11 +8,12 @@ import {
   exportRegistrations,
 } from "../controllers/registrationController";
 import { requireAdminAuth } from "../middleware/auth";
+import { registrationRateLimiter } from "../middleware/rateLimiter";
 
 const router = Router();
 
-// Public: Submit candidate registration
-router.post("/", submitRegistration);
+// Public: Submit candidate registration (Protected with in-app rate limiter & Cloudflare WAF)
+router.post("/", registrationRateLimiter, submitRegistration);
 
 // Protected Admin: Export registrations to Excel (must precede /:id)
 router.get("/export", requireAdminAuth, exportRegistrations);

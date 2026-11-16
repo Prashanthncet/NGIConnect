@@ -94,9 +94,13 @@ export async function seedDatabase(req: Request, res: Response, next: NextFuncti
       });
     }
 
-    // 5. Clean up any previous dummy registrations
+    // 5. Ensure NO mock or sample registrations exist in database
     await Registration.deleteMany({
-      candidateEmail: { $in: ["aarav.sharma@gmail.com", "pooja.hegde@ncms.co.in"] },
+      $or: [
+        { candidateEmail: { $regex: /@example\.com$/i } },
+        { candidateEmail: { $in: ["aarav.sharma@gmail.com", "pooja.hegde@ncms.co.in", "prashanth@ncetmail.com", "iamprashanthb05@gmail.com"] } },
+        { candidateName: { $in: ["Prateek Gowda", "Ananya Rao", "Sneha Kulkarni", "Manish Kumar", "Prashanth", "sparky", "PrashanthB"] } },
+      ],
     });
 
     return res.json({

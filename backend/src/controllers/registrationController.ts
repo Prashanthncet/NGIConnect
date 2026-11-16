@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import { Form } from "../models/Form";
 import { Registration } from "../models/Registration";
 import { generateRegistrationId } from "../utils/registrationId";
 import { generateRegistrationsExcelBuffer } from "../utils/excelExport";
 import { sendRegistrationThankYouEmail } from "../utils/mailer";
+import { defaultNcetFields, defaultNcmsFields } from "../utils/seedData";
 import { AuthenticatedRequest } from "../middleware/auth";
 
 function escapeRegex(str: string): string {
@@ -18,11 +20,35 @@ export async function submitRegistration(req: Request, res: Response, next: Next
       return res.status(400).json({ success: false, error: "Invalid form responses submitted" });
     }
 
-    const formQuery = formId ? { _id: formId } : { slug: formSlug };
-    const form = await Form.findOne(formQuery);
-
+    let form = null;
+    if (formId && mongoose.Types.ObjectId.isValid(formId)) {
+      form = await Form.findById(formId);
+    }
+    if (!form && formSlug) {
+      form = await Form.findOne({ slug: formSlug });
+    }
+    if (!form && institutionShortName) {
+      form = await Form.findOne({
+        institutionShortName: String(institutionShortName).toUpperCase(),
+        status: "published",
+      }).sort({ updatedAt: -1 });
+    }
     if (!form) {
-      return res.status(404).json({ success: false, error: "Registration form not found" });
+      const inst = (institutionShortName || "NCET").toUpperCase() as "NCET" | "NCMS";
+      form = await Form.create({
+        title: inst === "NCET" ? "NCET Admission & Community Registration 2026" : "NCMS Admission & Student Registration 2026",
+        description: inst === "NCET" ? "Official PUC registration for NCET." : "Official PUC registration for NCMS.",
+        institutionShortName: inst,
+        slug: `${inst.toLowerCase()}-registration-2026`,
+        status: "published",
+        currentPublishedVersion: 1,
+        fields: inst === "NCET" ? defaultNcetFields : defaultNcmsFields,
+        settings: {
+          allowMultipleSubmissions: false,
+          uniqueField: "email",
+          submitButtonText: "Submit Registration",
+        },
+      });
     }
 
     if (form.status !== "published") {
@@ -32,12 +58,24 @@ export async function submitRegistration(req: Request, res: Response, next: Next
       });
     }
 
+    // Clean & sanitize responses: store only non-empty, user-provided values matching form inputs
+    const sanitizedResponses: Record<string, any> = {};
+    for (const [key, value] of Object.entries(responses)) {
+      if (value !== undefined && value !== null && value !== "") {
+        if (typeof value === "string") {
+          sanitizedResponses[key] = value.trim();
+        } else {
+          sanitizedResponses[key] = value;
+        }
+      }
+    }
+
     // Validate only active, non-layout fields
     for (const field of form.fields) {
       if (["section_heading", "description"].includes(field.type)) continue;
 
       if (field.required) {
-        const val = responses[field.id];
+        const val = sanitizedResponses[field.id];
         if (
           val === undefined ||
           val === null ||
@@ -49,18 +87,6 @@ export async function submitRegistration(req: Request, res: Response, next: Next
             error: field.validation?.customErrorMessage || `Question "${field.label}" is required.`,
             fieldId: field.id,
           });
-        }
-      }
-    }
-
-    // Clean & sanitize responses: store only non-empty, user-provided values matching form inputs
-    const sanitizedResponses: Record<string, any> = {};
-    for (const [key, value] of Object.entries(responses)) {
-      if (value !== undefined && value !== null && value !== "") {
-        if (typeof value === "string") {
-          sanitizedResponses[key] = value.trim();
-        } else {
-          sanitizedResponses[key] = value;
         }
       }
     }
@@ -87,6 +113,27 @@ export async function submitRegistration(req: Request, res: Response, next: Next
       sanitizedResponses["contact"] ||
       sanitizedResponses["mobile"] ||
       "";
+
+    // Validate phone number format (10 digits)
+    if (candidatePhone) {
+      const cleanPhone = candidatePhone.replace(/\D/g, "");
+      if (cleanPhone.length < 10) {
+        return res.status(422).json({
+          success: false,
+          error: "Please enter a valid 10-digit mobile number.",
+          fieldId: "phone",
+        });
+      }
+    }
+
+    // Validate email format
+    if (candidateEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidateEmail)) {
+      return res.status(422).json({
+        success: false,
+        error: "Please enter a valid email address.",
+        fieldId: "email",
+      });
+    }
 
     const department =
       sanitizedResponses["department"] ||

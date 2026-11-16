@@ -25,3 +25,13 @@ export function requireAdminAuth(req: AuthenticatedRequest, res: Response, next:
   next();
 }
 
+export function requireSuperAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.admin || req.admin.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      error: "Access denied. Super administrator privileges required.",
+    });
+  }
+  next();
+}
+

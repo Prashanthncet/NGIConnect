@@ -6,9 +6,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FormFieldRenderer from "@/components/FormFieldRenderer";
 import { IForm, IFormField } from "@/types";
+import { defaultForms } from "@/lib/defaultForms";
 import {
   GraduationCap,
-  ShieldCheck,
   RotateCcw,
   Send,
   AlertCircle,
@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Building2,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 
 function RegisterContent() {
@@ -26,9 +27,10 @@ function RegisterContent() {
   const initialInst = searchParams.get("institution") === "NCMS" ? "NCMS" : "NCET";
   const [selectedInstitution, setSelectedInstitution] = useState<"NCET" | "NCMS">(initialInst);
 
-  const [loading, setLoading] = useState(true);
+  // Instant 0ms render with default verified campus schema, no loading delay
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState<IForm | null>(null);
+  const [form, setForm] = useState<IForm | null>(() => defaultForms[initialInst]);
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -38,47 +40,42 @@ function RegisterContent() {
     const instParam = searchParams.get("institution");
     if (instParam === "NCMS" || instParam === "NCET") {
       setSelectedInstitution(instParam);
+      setForm(defaultForms[instParam]);
     }
   }, [searchParams]);
 
-  // Load the published form for the selected institution dynamically from MongoDB
-  useEffect(() => {
-    async function loadForm() {
-      setLoading(true);
-      setGeneralError(null);
-      try {
-        // Use timestamp to prevent browser or intermediate caching, ensuring real-time dynamic changes
-        const res = await fetch(`/api/forms?institution=${selectedInstitution}&_t=${Date.now()}`, {
-          cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-          },
-        });
-        const data = await res.json();
-        if (data.success && data.data && data.data.length > 0) {
-          const publishedForm = data.data.find((f: IForm) => f.status === "published") || data.data[0];
-          setForm(publishedForm);
+  // Helper to initialize default field values
+  const initFormDefaults = (targetForm: IForm) => {
+    const initialVals: Record<string, any> = {};
+    targetForm.fields.forEach((field: IFormField) => {
+      if (field.defaultValue) {
+        initialVals[field.id] = field.defaultValue;
+      }
+    });
+    setResponses((prev) => ({ ...initialVals, ...prev }));
+  };
 
-          // Initialize default field values
-          const initialVals: Record<string, any> = {};
-          publishedForm.fields.forEach((field: IFormField) => {
-            if (field.defaultValue) {
-              initialVals[field.id] = field.defaultValue;
-            }
-          });
-          setResponses(initialVals);
-        } else {
-          setGeneralError("No registration form found for this campus. Please contact the administrator.");
+  // Revalidate form from API in background without blocking UI
+  useEffect(() => {
+    async function revalidateForm() {
+      setGeneralError(null);
+
+      try {
+        const res = await fetch(`/api/forms?institution=${selectedInstitution}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data && data.data.length > 0) {
+            const publishedForm = data.data.find((f: IForm) => f.status === "published") || data.data[0];
+            setForm(publishedForm);
+            initFormDefaults(publishedForm);
+          }
         }
       } catch (err: any) {
-        setGeneralError("Failed to load registration form. Please check your internet connection.");
-      } finally {
-        setLoading(false);
+        // Silently preserve verified schema
       }
     }
 
-    loadForm();
+    revalidateForm();
   }, [selectedInstitution]);
 
   // Handle individual question value change
@@ -116,8 +113,8 @@ function RegisterContent() {
         }
       }
 
+      const val = responses[field.id];
       if (isVisible && field.required && !["section_heading", "description"].includes(field.type)) {
-        const val = responses[field.id];
         if (
           val === undefined ||
           val === null ||
@@ -126,6 +123,22 @@ function RegisterContent() {
         ) {
           validationErrors[field.id] = field.validation?.customErrorMessage || `Question "${field.label}" is required.`;
         }
+      }
+
+      // Enhanced client-side validations for PUC applicant fields
+      if (val && (field.type === "phone" || field.id === "phone")) {
+        const clean = String(val).replace(/\D/g, "");
+        if (clean.length < 10) {
+          validationErrors[field.id] = "Please enter a valid 10-digit mobile number.";
+        }
+      }
+      if (val && (field.type === "email" || field.id === "email")) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim())) {
+          validationErrors[field.id] = "Please enter a valid email address.";
+        }
+      }
+      if (val && field.id === "full_name" && String(val).trim().length < 3) {
+        validationErrors[field.id] = "Full name must be at least 3 characters.";
       }
     });
 
@@ -150,13 +163,28 @@ function RegisterContent() {
         }),
       });
 
-      const result = await res.json();
+      let result: any = null;
+      try {
+        result = await res.json();
+      } catch (jsonErr) {
+        // Non-JSON response (e.g. 502 Bad Gateway HTML)
+      }
 
-      if (!res.ok || !result.success) {
-        if (result.fieldId) {
+      if (!res.ok || !result || !result.success) {
+        if (result?.fieldId) {
           setErrors({ [result.fieldId]: result.error });
         }
-        setGeneralError(result.error || "Submission failed. Please verify your details.");
+        if (res.status === 409 && result?.registrationId) {
+          setGeneralError(
+            result.error ||
+              `A registration with this email already exists (Registration ID: ${result.registrationId}).`
+          );
+        } else {
+          setGeneralError(
+            result?.error ||
+              "Unable to reach server right now. The database server may be waking up. Please wait 10 seconds and try submitting again."
+          );
+        }
         return;
       }
 
@@ -165,7 +193,9 @@ function RegisterContent() {
       const candidateName = encodeURIComponent(result.candidateName || "");
       router.push(`/registration-success?id=${regId}&institution=${selectedInstitution}&name=${candidateName}`);
     } catch (err: any) {
-      setGeneralError("Network error occurred during submission. Please try again.");
+      setGeneralError(
+        "Network connection interrupted. Please ensure you are connected to the internet and click Submit Registration again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -175,17 +205,17 @@ function RegisterContent() {
     <div className="min-h-screen bg-[#F7F9FF] flex flex-col">
       <Navbar />
 
-      <main className="flex-1 py-8 sm:py-12 px-3 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <main className="flex-1 py-6 sm:py-12 px-3 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6">
           {/* Responsive Institution Selector Switcher: Tabbed Side-by-Side on all devices */}
-          <div className="bg-white p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-xs grid grid-cols-2 gap-1.5 sm:gap-2">
+          <div className="bg-white p-1 sm:p-2 rounded-2xl border border-slate-200/90 shadow-xs grid grid-cols-2 gap-1 sm:gap-2">
             <button
               type="button"
               onClick={() => {
                 setSelectedInstitution("NCET");
                 router.replace("/register?institution=NCET");
               }}
-              className={`py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2.5 min-h-[48px] ${
+              className={`py-2 sm:py-3 px-1.5 sm:px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2.5 min-h-[46px] ${
                 selectedInstitution === "NCET"
                   ? "bg-[#102B46] text-white shadow-sm"
                   : "bg-transparent text-slate-600 hover:bg-slate-50"
@@ -194,13 +224,15 @@ function RegisterContent() {
               <img
                 src="/images/ncet-logo.png"
                 alt="NCET Logo"
-                className="w-6 h-6 sm:w-7 sm:h-7 object-contain bg-white rounded p-0.5 shrink-0"
+                className="w-5 h-5 sm:w-7 sm:h-7 object-contain bg-white rounded p-0.5 shrink-0"
               />
               <div className="text-left flex flex-col justify-center min-w-0">
-                <span className="text-xs sm:text-sm font-bold truncate leading-tight">NCET Campus</span>
-                <span className={`text-[9px] sm:text-[10px] font-semibold truncate ${
-                  selectedInstitution === "NCET" ? "text-orange-300" : "text-slate-400"
-                }`}>
+                <span className="text-[11px] sm:text-sm font-bold leading-tight">NCET Campus</span>
+                <span
+                  className={`text-[8.5px] sm:text-[10px] font-semibold leading-tight whitespace-nowrap ${
+                    selectedInstitution === "NCET" ? "text-orange-300" : "text-slate-400"
+                  }`}
+                >
                   Engineering & Tech
                 </span>
               </div>
@@ -212,7 +244,7 @@ function RegisterContent() {
                 setSelectedInstitution("NCMS");
                 router.replace("/register?institution=NCMS");
               }}
-              className={`py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2.5 min-h-[48px] ${
+              className={`py-2 sm:py-3 px-1.5 sm:px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-1.5 sm:gap-2.5 min-h-[46px] ${
                 selectedInstitution === "NCMS"
                   ? "bg-[#174A70] text-white shadow-sm"
                   : "bg-transparent text-slate-600 hover:bg-slate-50"
@@ -221,13 +253,15 @@ function RegisterContent() {
               <img
                 src="/images/ncms-logo.webp"
                 alt="NCMS Logo"
-                className="w-6 h-6 sm:w-7 sm:h-7 object-contain bg-white rounded p-0.5 shrink-0"
+                className="w-5 h-5 sm:w-7 sm:h-7 object-contain bg-white rounded p-0.5 shrink-0"
               />
               <div className="text-left flex flex-col justify-center min-w-0">
-                <span className="text-xs sm:text-sm font-bold truncate leading-tight">NCMS Campus</span>
-                <span className={`text-[9px] sm:text-[10px] font-semibold truncate ${
-                  selectedInstitution === "NCMS" ? "text-orange-300" : "text-slate-400"
-                }`}>
+                <span className="text-[11px] sm:text-sm font-bold leading-tight">NCMS Campus</span>
+                <span
+                  className={`text-[8.5px] sm:text-[10px] font-semibold leading-tight whitespace-nowrap ${
+                    selectedInstitution === "NCMS" ? "text-orange-300" : "text-slate-400"
+                  }`}
+                >
                   Management & Commerce
                 </span>
               </div>
@@ -244,20 +278,38 @@ function RegisterContent() {
           )}
 
           {/* Form Header Card */}
+          {!loading && !form && (
+            <div className="bg-white rounded-2xl border border-red-200 p-8 text-center space-y-4 shadow-xs">
+              <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+              <div>
+                <p className="text-base font-bold text-slate-800">Registration System Notice</p>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">{generalError || "Unable to load registration form."}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="px-5 py-2.5 bg-[#102B46] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#174A70] transition flex items-center gap-2 mx-auto"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Loading Form</span>
+              </button>
+            </div>
+          )}
+
           {!loading && form && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
                 {/* Header Top Accent Bar */}
                 <div
-                  className={`h-2.5 w-full ${
+                  className={`h-2 sm:h-2.5 w-full ${
                     selectedInstitution === "NCET" ? "bg-[#102B46]" : "bg-[#174A70]"
                   }`}
                 />
 
-                <div className="p-5 sm:p-8 space-y-4">
+                <div className="p-4 sm:p-8 space-y-3.5 sm:space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0">
                         <img
                           src={selectedInstitution === "NCET" ? "/images/ncet-logo.png" : "/images/ncms-logo.webp"}
                           alt={`${selectedInstitution} Logo`}
@@ -266,18 +318,18 @@ function RegisterContent() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#F28C28]">
+                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#F28C28]">
                             {selectedInstitution} Official Registry
                           </span>
                         </div>
-                        <h2 className="text-base sm:text-lg font-bold text-[#102B46] leading-tight">
+                        <h2 className="text-sm sm:text-lg font-bold text-[#102B46] leading-tight">
                           {selectedInstitution === "NCET"
                             ? "Nagarjuna College of Engineering & Technology"
                             : "Nagarjuna College of Management Studies"}
                         </h2>
                       </div>
                     </div>
-                    <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1 rounded-full border border-slate-200 self-start sm:self-auto">
+                    <span className="text-[10px] sm:text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 self-start sm:self-auto">
                       Academic Year 2026
                     </span>
                   </div>
@@ -289,17 +341,6 @@ function RegisterContent() {
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed text-justify">
                     {form.description}
                   </p>
-
-                  <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-slate-400 border-t border-slate-100">
-                    <span className="flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                      Official Verification Pipeline
-                    </span>
-                    <span>•</span>
-                    <span className="text-slate-500">
-                      Version v{form.currentPublishedVersion || 1}
-                    </span>
-                  </div>
                 </div>
               </div>
 
