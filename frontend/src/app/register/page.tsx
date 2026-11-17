@@ -126,10 +126,12 @@ function RegisterContent() {
       }
 
       // Enhanced client-side validations for PUC applicant fields
-      if (val && (field.type === "phone" || field.id === "phone")) {
+      if (val && (field.type === "phone" || field.id === "phone" || field.id.includes("phone"))) {
         const clean = String(val).replace(/\D/g, "");
-        if (clean.length < 10) {
-          validationErrors[field.id] = "Please enter a valid 10-digit mobile number.";
+        if (clean.length !== 10) {
+          validationErrors[field.id] = "Please enter an exact 10-digit mobile number.";
+        } else if (!/^[6-9]\d{9}$/.test(clean)) {
+          validationErrors[field.id] = "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.";
         }
       }
       if (val && (field.type === "email" || field.id === "email")) {

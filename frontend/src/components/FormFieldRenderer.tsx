@@ -135,10 +135,18 @@ export default function FormFieldRenderer({ field, value, onChange, error }: For
         {/* Short Text */}
         {field.type === "short_text" && (
           <input
-            type="text"
+            type={field.id.includes("phone") ? "tel" : "text"}
+            inputMode={field.id.includes("phone") ? "numeric" : undefined}
+            maxLength={field.id.includes("phone") ? 10 : undefined}
             placeholder={field.placeholder || "Enter your answer"}
             value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              if (field.id.includes("phone")) {
+                onChange(e.target.value.replace(/\D/g, "").slice(0, 10));
+              } else {
+                onChange(e.target.value);
+              }
+            }}
             className={`w-full px-4 py-2.5 rounded-xl border ${
               error ? "border-red-400 focus:ring-red-400" : "border-slate-200 focus:border-[#174A70] focus:ring-[#174A70]"
             } text-sm focus:outline-hidden focus:ring-2 focus:ring-opacity-20 transition`}
@@ -162,9 +170,15 @@ export default function FormFieldRenderer({ field, value, onChange, error }: For
         {field.type === "phone" && (
           <input
             type="tel"
-            placeholder={field.placeholder || "+91 98765 43210"}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={10}
+            placeholder={field.placeholder || "e.g. 9876543210"}
             value={value || ""}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 10);
+              onChange(digitsOnly);
+            }}
             className={`w-full px-4 py-2.5 rounded-xl border ${
               error ? "border-red-400 focus:ring-red-400" : "border-slate-200 focus:border-[#174A70] focus:ring-[#174A70]"
             } text-sm focus:outline-hidden focus:ring-2 focus:ring-opacity-20 transition`}

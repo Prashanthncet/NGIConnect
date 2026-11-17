@@ -30,6 +30,8 @@ import {
   Save,
   RotateCcw,
   SlidersHorizontal,
+  ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const ALL_STATUSES = ["Verified", "Pending", "Under Review", "Rejected"] as const;
@@ -56,6 +58,7 @@ function RegistrationsContent() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -294,12 +297,13 @@ function RegistrationsContent() {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (targetInst: string = institution) => {
     setExporting(true);
+    setExportMenuOpen(false);
     try {
       const statusParam = selectedStatuses.length > 0 ? selectedStatuses.join(",") : "ALL";
       const params = new URLSearchParams({
-        institution,
+        institution: targetInst,
         status: statusParam,
         search,
       });
@@ -309,7 +313,8 @@ function RegistrationsContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `NGI_Registrations_${institution}_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const cleanInstLabel = targetInst === "ALL" ? "All_Campuses" : targetInst;
+      a.download = `NGI_${cleanInstLabel}_Registrations_${new Date().toISOString().split("T")[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -367,15 +372,73 @@ function RegistrationsContent() {
                 <option value="NCMS">NCMS Management</option>
               </select>
 
-              {/* Excel Export Button */}
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#102B46] hover:bg-[#174A70] text-white text-xs font-bold transition shadow-2xs disabled:opacity-50 min-h-[44px]"
-              >
-                <Download className={`w-3.5 h-3.5 text-[#F28C28] ${exporting ? "animate-bounce" : ""}`} />
-                <span>{exporting ? "Generating..." : "Export Excel (.xlsx)"}</span>
-              </button>
+              {/* Excel Export Dropdown (NCET / NCMS / ALL) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setExportMenuOpen(!exportMenuOpen)}
+                  disabled={exporting}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#102B46] hover:bg-[#174A70] text-white text-xs font-bold transition shadow-xs disabled:opacity-50 min-h-[44px]"
+                >
+                  <Download className={`w-3.5 h-3.5 text-[#F28C28] ${exporting ? "animate-bounce" : ""}`} />
+                  <span>{exporting ? "Generating..." : "Export Excel (.xlsx)"}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${exportMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {exportMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-20"
+                      onClick={() => setExportMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-30 animate-in fade-in zoom-in-95">
+                      <div className="px-3 py-1.5 border-b border-slate-100">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Select Campus to Export
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExport("NCET")}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-orange-50/60 transition flex items-center gap-2.5 text-xs font-semibold text-slate-700 hover:text-[#102B46]"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-[#F28C28]"></span>
+                        <div>
+                          <div className="font-bold text-slate-800">Export NCET (.xlsx)</div>
+                          <div className="text-[10px] text-slate-500">Nagarjuna College of Engineering & Tech</div>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExport("NCMS")}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-sky-50/60 transition flex items-center gap-2.5 text-xs font-semibold text-slate-700 hover:text-[#102B46]"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-[#174A70]"></span>
+                        <div>
+                          <div className="font-bold text-slate-800">Export NCMS (.xlsx)</div>
+                          <div className="text-[10px] text-slate-500">Nagarjuna College of Management Studies</div>
+                        </div>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100"></div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExport("ALL")}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-100 transition flex items-center gap-2.5 text-xs font-semibold text-slate-700 hover:text-[#102B46]"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                        <div>
+                          <div className="font-bold text-slate-800">Export All Campuses (.xlsx)</div>
+                          <div className="text-[10px] text-slate-500">Combined NCET & NCMS Registrations</div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -872,11 +935,13 @@ function RegistrationsContent() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-slate-600 text-[11px] uppercase font-bold block">Contact Number</label>
+                      <label className="text-slate-600 text-[11px] uppercase font-bold block">Contact Number (10 Digits)</label>
                       <input
-                        type="text"
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
                         value={editCandidatePhone}
-                        onChange={(e) => setEditCandidatePhone(e.target.value)}
+                        onChange={(e) => setEditCandidatePhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                         className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:ring-2 focus:ring-[#174A70]"
                       />
                     </div>

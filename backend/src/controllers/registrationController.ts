@@ -125,13 +125,13 @@ export async function submitRegistration(req: Request, res: Response, next: Next
       sanitizedResponses["mobile"] ||
       "";
 
-    // Validate phone number format (10 digits)
+    // Validate phone number format (exactly 10 digits starting with 6-9)
     if (candidatePhone) {
       const cleanPhone = candidatePhone.replace(/\D/g, "");
-      if (cleanPhone.length < 10) {
+      if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
         return res.status(422).json({
           success: false,
-          error: "Please enter a valid 10-digit mobile number.",
+          error: "Please enter an exact 10-digit Indian mobile number starting with 6, 7, 8, or 9.",
           fieldId: "phone",
         });
       }
