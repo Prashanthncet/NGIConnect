@@ -163,7 +163,7 @@ export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplat
   const attachments: Array<{ filename: string; path: string; cid: string }> = [];
   const logoPath = getLogoFilePath();
 
-  let logoSrc = "";
+  let logoSrc = "https://raw.githubusercontent.com/Prashanthncet/NGIConnect/main/frontend/public/images/ngi-header-logo.png";
   if (options.logoUrl) {
     logoSrc = options.logoUrl;
   } else if (logoPath && options.useCidLogo !== false) {

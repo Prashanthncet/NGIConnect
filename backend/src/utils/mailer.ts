@@ -16,7 +16,7 @@ export interface SendConfirmationEmailParams extends Partial<RegistrationEmailTe
 
 /**
  * Creates an SMTP transporter from environment variables.
- * Compatible with Gmail App Passwords, Outlook, Resend, SendGrid, Amazon SES, or custom SMTP.
+ * Compatible with Gmail App Passwords, Google Workspace, Outlook, Resend, SendGrid, Amazon SES, or custom SMTP.
  */
 export function getTransporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
@@ -28,13 +28,37 @@ export function getTransporter() {
     return null;
   }
 
+  const cleanUser = user.trim();
+  const cleanPass = pass.trim();
+
+  // If host is Gmail / Google Workspace (e.g. ncetmail.com or gmail.com),
+  // use dedicated Gmail transport service to bypass cloud port 587 STARTTLS firewalls.
+  if (host.includes("gmail") || cleanUser.includes("@gmail.com") || cleanUser.includes("ncetmail.com")) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: cleanUser,
+        pass: cleanPass,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+  }
+
   return nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
     auth: {
-      user,
-      pass,
+      user: cleanUser,
+      pass: cleanPass,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: {
+      rejectUnauthorized: false,
     },
   });
 }
@@ -64,7 +88,12 @@ export async function sendRegistrationThankYouEmail(
     }
 
     // Fetch cached dynamic template from Admin settings (in-memory cached, ultra-fast)
-    const activeTemplate = await getActiveEmailTemplate();
+    let activeTemplate = null;
+    try {
+      activeTemplate = await getActiveEmailTemplate();
+    } catch (e) {
+      console.warn("[Mailer] Could not load active template, using default template:", e);
+    }
 
     const mergedOptions: RegistrationEmailTemplateOptions = {
       toEmail,
@@ -95,6 +124,7 @@ export async function sendRegistrationThankYouEmail(
     // Build the email payload with all customized or default values
     const emailPayload = buildRegistrationEmailTemplate(mergedOptions);
 
+    console.log(`[Mailer] Dispatching confirmation email to ${toEmail}...`);
     const info = await transporter.sendMail({
       from: emailPayload.from,
       to: emailPayload.to,
