@@ -8,6 +8,7 @@ import institutionRoutes from "./institutionRoutes";
 import seedRoutes from "./seedRoutes";
 import adminUserRoutes from "./adminUserRoutes";
 import emailTemplateRoutes from "./emailTemplateRoutes";
+import { sendRegistrationThankYouEmail } from "../utils/mailer";
 
 const router = Router();
 
@@ -49,6 +50,30 @@ router.get("/health", (req, res) => {
       connected: mongoose.connection.readyState === 1,
     },
   });
+});
+
+// Diagnostic endpoint to test live email dispatch
+router.get("/test-email", async (req, res) => {
+  const targetEmail = (req.query.to as string) || "prashanthb0501@gmail.com";
+  try {
+    const success = await sendRegistrationThankYouEmail({
+      toEmail: targetEmail,
+      candidateName: "Prashanth",
+      registrationId: "NGI-TEST-2026",
+      institutionShortName: "NCET",
+    });
+
+    return res.json({
+      success,
+      targetEmail,
+      provider: process.env.RESEND_API_KEY ? "Resend" : process.env.BREVO_API_KEY ? "Brevo" : "SMTP",
+      message: success
+        ? `Email sent successfully to ${targetEmail}`
+        : `Email sending failed. If using Resend without a verified domain, Resend only delivers to your registered Resend account owner email.`,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || String(err) });
+  }
 });
 
 export default router;
