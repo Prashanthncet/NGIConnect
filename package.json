@@ -10,6 +10,7 @@
   "scripts": {
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
+    "dev:turbo": "npm run dev:turbo --prefix frontend",
     "dev": "npm run dev:frontend",
     "build:backend": "npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",

@@ -45,6 +45,8 @@ const RegistrationSchema: Schema<IRegistration> = new Schema(
 // Composite indexes for fast queries
 RegistrationSchema.index({ formId: 1, candidateEmail: 1 });
 RegistrationSchema.index({ institutionShortName: 1, submittedAt: -1 });
+RegistrationSchema.index({ status: 1, submittedAt: -1 });
+RegistrationSchema.index({ institutionShortName: 1, status: 1, submittedAt: -1 });
 
 export const Registration: Model<IRegistration> =
   mongoose.models.Registration || mongoose.model<IRegistration>("Registration", RegistrationSchema);
