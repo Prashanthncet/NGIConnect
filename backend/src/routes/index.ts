@@ -56,7 +56,7 @@ router.get("/health", (req, res) => {
 router.get("/test-email", async (req, res) => {
   const targetEmail = (req.query.to as string) || "prashanthb0501@gmail.com";
   try {
-    const success = await sendRegistrationThankYouEmail({
+    const result = await sendRegistrationThankYouEmail({
       toEmail: targetEmail,
       candidateName: "Prashanth",
       registrationId: "NGI-TEST-2026",
@@ -64,12 +64,13 @@ router.get("/test-email", async (req, res) => {
     });
 
     return res.json({
-      success,
+      success: result.success,
       targetEmail,
-      provider: process.env.RESEND_API_KEY ? "Resend" : process.env.BREVO_API_KEY ? "Brevo" : "SMTP",
-      message: success
+      provider: result.provider || (process.env.RESEND_API_KEY ? "Resend" : process.env.BREVO_API_KEY ? "Brevo" : "SMTP"),
+      error: result.error,
+      message: result.success
         ? `Email sent successfully to ${targetEmail}`
-        : `Email sending failed. If using Resend without a verified domain, Resend only delivers to your registered Resend account owner email.`,
+        : `Email sending failed: ${result.error}`,
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || String(err) });

@@ -154,7 +154,7 @@ export async function sendTestEmail(req: AuthenticatedRequest, res: Response, ne
 
     const overrides = templateOverrides || {};
 
-    const success = await sendRegistrationThankYouEmail({
+    const result = await sendRegistrationThankYouEmail({
       toEmail: recipient,
       candidateName: overrides.candidateName || req.admin?.name || "Dr. Rajesh Sharma",
       registrationId: overrides.registrationId || "NGI-TEST-2026-00001",
@@ -163,16 +163,18 @@ export async function sendTestEmail(req: AuthenticatedRequest, res: Response, ne
       ...overrides,
     });
 
-    if (success) {
+    if (result.success) {
       return res.json({
         success: true,
         message: `Test email successfully dispatched to ${recipient}`,
+        provider: result.provider,
       });
     } else {
       return res.status(500).json({
         success: false,
         error:
-          "Could not send email. Please ensure SMTP_USER and SMTP_PASS are correctly configured in backend/.env.",
+          result.error ||
+          "Could not send email. Please ensure SMTP_USER and SMTP_PASS or RESEND_API_KEY are configured.",
       });
     }
   } catch (error) {

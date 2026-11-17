@@ -88,6 +88,10 @@ export interface IRegistration {
   category?: string;
   responses: Record<string, any>;
   status: "Verified" | "Pending" | "Under Review" | "Rejected";
+  emailStatus?: "Delivered" | "Failed" | "Pending";
+  emailSentAt?: string;
+  emailError?: string;
+  emailDeliveryAttempts?: number;
   submittedAt: string;
 }
 

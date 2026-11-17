@@ -1,18 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/Prashanthncet/NGIConnect/main/frontend/public/images/ngi-header-logo.png" alt="NGi Connect Banner" width="100%"/>
-
-</div>
-
 <div align="center">
-
-**Next.js 14** · **React 18** · **Tailwind CSS v3** · **Express 4** · **TypeScript 5** · **MongoDB Atlas**
-
-<a href="#-testing"><img src="https://img.shields.io/badge/tests-smoke_%2B_api_passing-2f66b3?style=for-the-badge&logo=jest" alt="Smoke + API Tests Passing"/></a>
-<a href="#-modules"><img src="https://img.shields.io/badge/modules-7_core_modules-f9a03f?style=for-the-badge" alt="7 Core Modules"/></a>
-<a href="#-security--cloudflare-shield"><img src="https://img.shields.io/badge/security-helmet_%2B_RBAC_%2B_rate_limit-0d7d76?style=for-the-badge" alt="Security: Helmet + RBAC + Rate Limit"/></a>
-
-</div>
 
 ---
 
@@ -22,43 +10,16 @@ An enterprise-grade institutional admissions and dynamic registry ecosystem for 
 
 Built as a production-grade monorepo serving **Nagarjuna College of Engineering and Technology (NCET)** (Autonomous, VTU & NAAC A+) and **Nagarjuna College of Management Studies (NCMS)** (Bengaluru North University).
 
-| Layer | Technology | Port |
-|---|---|---|
-| **Frontend** | Next.js 14 (App Router), React 18, Tailwind CSS v3 | `3002` (dev) / `3000` (prod) |
-| **Backend** | Express 4.21, TypeScript 5.5, Node.js 20 REST API | `5000` |
-| **Database** | MongoDB Atlas via Mongoose 8.7 — 6 collections, compound indexes | `cloud cluster / local` |
-| **Auth** | Stateless JWT (HS256) bearer tokens, HTTP-only cookies, role-scoped RBAC | — |
+| Layer              | Technology                                                               | Port                             |
+| ------------------ | ------------------------------------------------------------------------ | -------------------------------- |
+| **Frontend** | Next.js 14 (App Router), React 18, Tailwind CSS v3                       | `3002` (dev) / `3000` (prod) |
+| **Backend**  | Express 4.21, TypeScript 5.5, Node.js 20 REST API                        | `5000`                         |
+| **Database** | MongoDB Atlas via Mongoose 8.7 — 6 collections, compound indexes        | `cloud cluster / local`        |
+| **Auth**     | Stateless JWT (HS256) bearer tokens, HTTP-only cookies, role-scoped RBAC | —                               |
 
 ---
 
 ## Architecture
-
-```
-                             [ Cloudflare Edge Network ]
-                                         │
-                  ┌──────────────────────┴──────────────────────┐
-                  ▼                                             ▼
-         [ DDoS / Bot Mitigation ]                     [ WAF & Rate Limiter ]
-         • Managed Challenge                           • 50 req/min/IP limit
-         • Bot Fight Mode                              • OWASP Top 10 Core Rules
-                  │                                             │
-                  └──────────────────────┬──────────────────────┘
-                                         ▼
-                           [ Vercel Edge CDN Cache ]
-                           • Next.js 14 App Router
-                           • Server-Side /api/* Rewrite Proxy
-                                         │
-                                         ▼
-                         [ Render REST API (Express) ]
-                         • JWT Authentication & HTTP-Only Cookies
-                         • Rate Limiting & Input Sanitization
-                         • Asynchronous SMTP Email Worker
-                                         │
-                                         ▼
-                           [ MongoDB Atlas Cluster ]
-                           • Compound Unique Indexes
-                           • Schema-Driven Dynamic Documents
-```
 
 The browser **never** talks directly to the backend in the public registration path — `next.config.mjs` rewrites `/api/*` server-side, eliminating CORS preflight overhead in standard client flows and preventing token exposure to client-side redirects.
 
@@ -144,8 +105,8 @@ Production boot **fails fast** if `MONGODB_URI` or `JWT_SECRET` is missing, prev
 
 Seeded default administrator credentials for local development and demonstration:
 
-| Email | Password | Role | Access Level |
-|---|---|---|---|
+| Email                | Password                                            | Role            | Access Level                  |
+| -------------------- | --------------------------------------------------- | --------------- | ----------------------------- |
 | `admin@ngi.org.in` | *(configured via `ADMIN_PASSWORD` in `.env`)* | `super_admin` | Full System & User Management |
 
 > **Note:** Set a strong password in your local/production `.env` file and rotate credentials regularly via the `/admin/users` console.
@@ -165,38 +126,38 @@ npm run test:stress  # High-concurrency load and throughput benchmark
 
 ### High-Concurrency Benchmarks
 
-| Metric | Benchmark Result | Target Standard |
-|---|---|---|
-| **Max Simulated Throughput** | **647.25 req/sec** | > 200 req/sec |
-| **Average API Latency** | **24.12 ms** | < 100 ms |
-| **50th Percentile (Median)** | **17 ms** | < 50 ms |
-| **99th Percentile** | **61 ms** | < 250 ms |
-| **Success Rate (200 OK)** | **100.0%** (0 errors) | 99.9% |
+| Metric                             | Benchmark Result            | Target Standard |
+| ---------------------------------- | --------------------------- | --------------- |
+| **Max Simulated Throughput** | **647.25 req/sec**    | > 200 req/sec   |
+| **Average API Latency**      | **24.12 ms**          | < 100 ms        |
+| **50th Percentile (Median)** | **17 ms**             | < 50 ms         |
+| **99th Percentile**          | **61 ms**             | < 250 ms        |
+| **Success Rate (200 OK)**    | **100.0%** (0 errors) | 99.9%           |
 
 ---
 
 ## Scripts
 
-| Command (in `backend/`) | Description |
-|---|---|
-| `npm run dev` | Watch mode with `ts-node-dev` on port 5000 |
-| `npm run build` | Compile TypeScript (`src/` → `dist/`) |
-| `npm run start` | Run compiled production server (`node dist/server.js`) |
+| Command (in `backend/`) | Description                                              |
+| ------------------------- | -------------------------------------------------------- |
+| `npm run dev`           | Watch mode with `ts-node-dev` on port 5000             |
+| `npm run build`         | Compile TypeScript (`src/` → `dist/`)               |
+| `npm run start`         | Run compiled production server (`node dist/server.js`) |
 
-| Command (in `frontend/`) | Description |
-|---|---|
-| `npm run dev` | Next.js development server on port 3002 |
-| `npm run build` | Production Next.js build + typecheck |
-| `npm run start` | Run production Next.js server on port 3002 |
-| `npm run lint` | Run ESLint static analysis |
-| `npm run clean` | Free port 3002 if locked by zombie processes |
+| Command (in `frontend/`) | Description                                  |
+| -------------------------- | -------------------------------------------- |
+| `npm run dev`            | Next.js development server on port 3002      |
+| `npm run build`          | Production Next.js build + typecheck         |
+| `npm run start`          | Run production Next.js server on port 3002   |
+| `npm run lint`           | Run ESLint static analysis                   |
+| `npm run clean`          | Free port 3002 if locked by zombie processes |
 
-| Command (in root) | Description |
-|---|---|
-| `npm run install:all` | Install all root, backend, and frontend dependencies |
-| `npm run build` | Unified build (`build:backend` && `build:frontend`) |
-| `npm test` | Run complete smoke and API test suites |
-| `npm run kill:ports` | Clean kill hanging processes on ports 3002 and 5000 |
+| Command (in root)       | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `npm run install:all` | Install all root, backend, and frontend dependencies    |
+| `npm run build`       | Unified build (`build:backend` && `build:frontend`) |
+| `npm test`            | Run complete smoke and API test suites                  |
+| `npm run kill:ports`  | Clean kill hanging processes on ports 3002 and 5000     |
 
 ---
 
@@ -254,11 +215,11 @@ NGIConnect/
 
 ## Owner
 
-| | |
-|---|---|
-| **Maintainer** | **Prashanth** · `prashanth123@ncetmail.com` |
-| **Institution** | **Nagarjuna Group of Institutions (NGI)** |
-| **Campuses** | **NCET** (Autonomous Engineering) & **NCMS** (Management Studies) |
+|                       |                                                                               |
+| --------------------- | ----------------------------------------------------------------------------- |
+| **Maintainer**  | **Prashanth** · `prashanth123@ncetmail.com`                          |
+| **Institution** | **Nagarjuna Group of Institutions (NGI)**                               |
+| **Campuses**    | **NCET** (Autonomous Engineering) & **NCMS** (Management Studies) |
 
 ---
 
@@ -274,17 +235,13 @@ Stated plainly for production engineering clarity:
 
 ## Documentation
 
-| Document | Description |
-|---|---|
-| [`audits/security-audit-report.md`](audits/security-audit-report.md) | Comprehensive security audit, CVE review, and CORS validation |
-| [`render.yaml`](render.yaml) | Infrastructure-as-code blueprint for Render Web Service deployment |
-| [`backups/pre_deletion_backup/`](backups/pre_deletion_backup) | Pre-deployment database snapshots and environment variable backup |
-| **API Health Vitals** | `http://localhost:5000/api/health` |
+| Document                                                              | Description                                                        |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`audits/security-audit-report.md`](audits/security-audit-report.md) | Comprehensive security audit, CVE review, and CORS validation      |
+| [`render.yaml`](render.yaml)                                         | Infrastructure-as-code blueprint for Render Web Service deployment |
+| [`backups/pre_deletion_backup/`](backups/pre_deletion_backup)        | Pre-deployment database snapshots and environment variable backup  |
+| **API Health Vitals**                                           | `http://localhost:5000/api/health`                               |
 
 ---
 
 <div align="center">
-
-*“Leadership through Excellence — Nagarjuna Group of Institutions.”*
-
-</div>

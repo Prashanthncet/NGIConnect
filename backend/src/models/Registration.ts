@@ -12,6 +12,10 @@ export interface IRegistration extends Document {
   category?: string; // Student, Alumni, Faculty, Industry
   responses: Record<string, any>;
   status: "Verified" | "Pending" | "Under Review" | "Rejected";
+  emailStatus: "Delivered" | "Failed" | "Pending";
+  emailSentAt?: Date;
+  emailError?: string;
+  emailDeliveryAttempts?: number;
   submittedAt: Date;
   ipAddress?: string;
   createdAt: Date;
@@ -36,6 +40,15 @@ const RegistrationSchema: Schema<IRegistration> = new Schema(
       default: "Pending",
       index: true,
     },
+    emailStatus: {
+      type: String,
+      enum: ["Delivered", "Failed", "Pending"],
+      default: "Pending",
+      index: true,
+    },
+    emailSentAt: { type: Date },
+    emailError: { type: String },
+    emailDeliveryAttempts: { type: Number, default: 0 },
     submittedAt: { type: Date, default: Date.now, index: true },
     ipAddress: { type: String },
   },

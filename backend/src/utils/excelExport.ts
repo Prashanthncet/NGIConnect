@@ -40,6 +40,7 @@ export async function generateRegistrationsExcelBuffer(
     { header: "Department / Program", key: "department", width: 32 },
     { header: "Category", key: "category", width: 18 },
     { header: "Status", key: "status", width: 14 },
+    { header: "Email Delivery", key: "emailStatus", width: 16 },
     { header: "Submitted At", key: "submittedAt", width: 22 },
   ];
 
@@ -94,6 +95,7 @@ export async function generateRegistrationsExcelBuffer(
       department: reg.department || "—",
       category: reg.category || "Student",
       status: reg.status,
+      emailStatus: reg.emailStatus || "Pending",
       submittedAt: new Date(reg.submittedAt).toLocaleString("en-US", {
         year: "numeric",
         month: "short",

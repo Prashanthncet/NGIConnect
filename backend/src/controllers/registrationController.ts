@@ -202,9 +202,23 @@ export async function submitRegistration(req: Request, res: Response, next: Next
         registrationId: registration.registrationId,
         institutionShortName: shortName,
         formTitle: form.title,
-      }).catch((err) => {
-        console.error("[Mailer] Background email error:", err);
-      });
+      })
+        .then(async (result) => {
+          await Registration.findByIdAndUpdate(registration._id, {
+            emailStatus: result.success ? "Delivered" : "Failed",
+            emailSentAt: result.success ? new Date() : undefined,
+            emailError: result.success ? undefined : result.error,
+            $inc: { emailDeliveryAttempts: 1 },
+          });
+        })
+        .catch(async (err) => {
+          console.error("[Mailer] Background email error:", err);
+          await Registration.findByIdAndUpdate(registration._id, {
+            emailStatus: "Failed",
+            emailError: err?.message || String(err),
+            $inc: { emailDeliveryAttempts: 1 },
+          });
+        });
     }
 
     return res.status(201).json({
@@ -403,6 +417,120 @@ export async function exportRegistrations(req: AuthenticatedRequest, res: Respon
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     return res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Manually trigger/resend confirmation email for a single candidate registration
+ */
+export async function resendRegistrationEmail(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const registration = await Registration.findOne({
+      $or: [{ registrationId: id }, ...(isObjectId ? [{ _id: id }] : [])],
+    });
+
+    if (!registration) {
+      return res.status(404).json({ success: false, error: "Registration record not found." });
+    }
+
+    if (!registration.candidateEmail || !registration.candidateEmail.includes("@")) {
+      return res.status(400).json({ success: false, error: "Candidate has no valid email address." });
+    }
+
+    const form = await Form.findById(registration.formId);
+
+    const result = await sendRegistrationThankYouEmail({
+      toEmail: registration.candidateEmail,
+      candidateName: registration.candidateName,
+      registrationId: registration.registrationId,
+      institutionShortName: registration.institutionShortName,
+      formTitle: form?.title,
+    });
+
+    registration.emailStatus = result.success ? "Delivered" : "Failed";
+    if (result.success) {
+      registration.emailSentAt = new Date();
+      registration.emailError = undefined;
+    } else {
+      registration.emailError = result.error || "Delivery failed";
+    }
+    registration.emailDeliveryAttempts = (registration.emailDeliveryAttempts || 0) + 1;
+    await registration.save();
+
+    return res.json({
+      success: result.success,
+      emailStatus: registration.emailStatus,
+      error: result.error,
+      message: result.success
+        ? `Confirmation email successfully delivered to ${registration.candidateEmail}`
+        : `Delivery attempt failed: ${result.error}`,
+      registration,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Manually trigger/resend confirmation email in bulk for selected registrations
+ */
+export async function resendBulkRegistrationEmails(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const { registrationIds } = req.body;
+    if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
+      return res.status(400).json({ success: false, error: "Please provide an array of registration IDs to resend." });
+    }
+
+    const registrations = await Registration.find({
+      registrationId: { $in: registrationIds },
+    });
+
+    let deliveredCount = 0;
+    let failedCount = 0;
+    const results: any[] = [];
+
+    for (const reg of registrations) {
+      if (!reg.candidateEmail || !reg.candidateEmail.includes("@")) {
+        reg.emailStatus = "Failed";
+        reg.emailError = "No valid candidate email address found.";
+        await reg.save();
+        failedCount++;
+        results.push({ id: reg.registrationId, email: reg.candidateEmail, success: false, error: reg.emailError });
+        continue;
+      }
+
+      const result = await sendRegistrationThankYouEmail({
+        toEmail: reg.candidateEmail,
+        candidateName: reg.candidateName,
+        registrationId: reg.registrationId,
+        institutionShortName: reg.institutionShortName,
+      });
+
+      reg.emailStatus = result.success ? "Delivered" : "Failed";
+      if (result.success) {
+        reg.emailSentAt = new Date();
+        reg.emailError = undefined;
+        deliveredCount++;
+      } else {
+        reg.emailError = result.error || "Delivery failed";
+        failedCount++;
+      }
+      reg.emailDeliveryAttempts = (reg.emailDeliveryAttempts || 0) + 1;
+      await reg.save();
+      results.push({ id: reg.registrationId, email: reg.candidateEmail, success: result.success, error: result.error });
+    }
+
+    return res.json({
+      success: true,
+      total: registrations.length,
+      deliveredCount,
+      failedCount,
+      results,
+    });
   } catch (error) {
     next(error);
   }

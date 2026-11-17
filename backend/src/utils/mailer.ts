@@ -159,19 +159,26 @@ export function getTransporter(): Transporter | null {
   });
 }
 
+export interface SendEmailResult {
+  success: boolean;
+  provider?: "Resend" | "Brevo" | "SMTP" | "None";
+  messageId?: string;
+  error?: string;
+}
+
 /**
  * Asynchronously dispatches an official Thank You & Confirmation email to the registered candidate.
  * Supports HTTP REST API (Resend / Brevo over port 443) and SMTP (ports 465/587).
  */
 export async function sendRegistrationThankYouEmail(
   params: SendConfirmationEmailParams
-): Promise<boolean> {
+): Promise<SendEmailResult> {
   try {
     const { toEmail, registrationId } = params;
 
     if (!toEmail || !toEmail.includes("@")) {
       console.log(`[Mailer] No valid email provided for registration ${registrationId}. Skipped email.`);
-      return false;
+      return { success: false, error: "Candidate has no valid email address." };
     }
 
     // Fetch cached dynamic template from Admin settings
@@ -228,7 +235,7 @@ export async function sendRegistrationThankYouEmail(
 
       if (resendResult.success) {
         console.log(`[Mailer] Confirmation email sent successfully via Resend to ${toEmail} (Id: ${resendResult.id})`);
-        return true;
+        return { success: true, provider: "Resend", messageId: resendResult.id };
       }
       console.warn(`[Mailer] Resend API failed: ${resendResult.error}. Falling back to other providers...`);
     }
@@ -249,7 +256,7 @@ export async function sendRegistrationThankYouEmail(
 
       if (brevoResult.success) {
         console.log(`[Mailer] Confirmation email sent successfully via Brevo to ${toEmail} (Id: ${brevoResult.id})`);
-        return true;
+        return { success: true, provider: "Brevo", messageId: brevoResult.id };
       }
       console.warn(`[Mailer] Brevo API failed: ${brevoResult.error}. Falling back to other providers...`);
     }
@@ -258,10 +265,9 @@ export async function sendRegistrationThankYouEmail(
     const transporter = getTransporter();
 
     if (!transporter) {
-      console.log(
-        `[Mailer] No mail service configured. Set RESEND_API_KEY (recommended for Render Free tier) or SMTP_USER/SMTP_PASS in environment variables. Target: ${toEmail} | RegID: ${registrationId}`
-      );
-      return false;
+      const msg = "No mail provider configured. Please set RESEND_API_KEY (port 443) or SMTP_USER/SMTP_PASS in environment variables.";
+      console.log(`[Mailer] ${msg} Target: ${toEmail} | RegID: ${registrationId}`);
+      return { success: false, provider: "None", error: msg };
     }
 
     console.log(`[Mailer] Dispatching confirmation email via SMTP to ${toEmail}...`);
@@ -278,7 +284,7 @@ export async function sendRegistrationThankYouEmail(
     console.log(
       `[Mailer] Confirmation email sent successfully to ${toEmail} from ${emailPayload.from} (MessageId: ${info?.messageId || "sent"})`
     );
-    return true;
+    return { success: true, provider: "SMTP", messageId: info?.messageId || "sent" };
   } catch (error: any) {
     const isConnectionTimeout =
       error?.code === "ETIMEDOUT" ||
@@ -286,7 +292,10 @@ export async function sendRegistrationThankYouEmail(
       error?.code === "ESOCKETTIMEDOUT" ||
       error?.message?.includes("timeout");
 
+    let friendlyError = error?.message || String(error);
     if (isConnectionTimeout) {
+      friendlyError =
+        "Outbound SMTP port blocked or timed out. On Render Free tier, add RESEND_API_KEY to send via HTTPS (port 443).";
       console.warn(
         `[Mailer] ⚠️ Cloud Network Notice: Outbound SMTP connection timed out (${error.code || "TIMEOUT"}). ` +
         `Render Free Tier blocks outbound ports 25, 465, and 587. ` +
@@ -295,7 +304,7 @@ export async function sendRegistrationThankYouEmail(
     } else {
       console.error(`[Mailer] Error dispatching confirmation email to ${params.toEmail}:`, error);
     }
-    return false;
+    return { success: false, error: friendlyError };
   }
 }
 
