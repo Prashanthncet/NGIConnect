@@ -125,8 +125,8 @@ Key environment configurations:
 # backend/.env
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/ngiconnect
-JWT_SECRET=ngi_connect_super_secret_jwt_key_2026_institutional_secure
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/ngiconnect
+JWT_SECRET=your_jwt_secret_key_minimum_32_characters
 FRONTEND_URL=http://localhost:3002
 ADMIN_URL=http://localhost:3002
 
@@ -146,9 +146,9 @@ Seeded default administrator credentials for local development and demonstration
 
 | Email | Password | Role | Access Level |
 |---|---|---|---|
-| `admin@ngi.org.in` | `AdminNGI@2026` | `super_admin` | Full System & User Management |
+| `admin@ngi.org.in` | *(configured via `ADMIN_PASSWORD` in `.env`)* | `super_admin` | Full System & User Management |
 
-> **Note:** Update the admin password immediately upon deploying to production via the `/admin/users` console.
+> **Note:** Set a strong password in your local/production `.env` file and rotate credentials regularly via the `/admin/users` console.
 
 ---
 
