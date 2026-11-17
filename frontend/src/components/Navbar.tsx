@@ -59,7 +59,7 @@ export default function Navbar() {
           "@media print": { display: "none !important" },
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth={false} sx={{ px: { xs: 2, sm: 3, md: 4, lg: 5 } }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Box
@@ -132,7 +132,7 @@ export default function Navbar() {
           "@media print": { display: "none !important" },
         }}
       >
-        <Container maxWidth="xl" sx={{ px: { xs: 1.25, sm: 2.5, md: 4, lg: 5 } }}>
+        <Container maxWidth={false} sx={{ px: { xs: 1.5, sm: 2.5, md: 4, lg: 5 }, width: "100%" }}>
           <Toolbar
             disableGutters
             sx={{
