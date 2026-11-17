@@ -238,6 +238,9 @@ export async function sendRegistrationThankYouEmail(
         return { success: true, provider: "Resend", messageId: resendResult.id };
       }
       console.warn(`[Mailer] Resend API failed: ${resendResult.error}. Falling back to other providers...`);
+      if (!process.env.BREVO_API_KEY) {
+        return { success: false, provider: "Resend", error: `Resend error: ${resendResult.error}` };
+      }
     }
 
     // 2. Try Brevo HTTP API (HTTPS port 443)
@@ -258,7 +261,8 @@ export async function sendRegistrationThankYouEmail(
         console.log(`[Mailer] Confirmation email sent successfully via Brevo to ${toEmail} (Id: ${brevoResult.id})`);
         return { success: true, provider: "Brevo", messageId: brevoResult.id };
       }
-      console.warn(`[Mailer] Brevo API failed: ${brevoResult.error}. Falling back to other providers...`);
+      console.warn(`[Mailer] Brevo API failed: ${brevoResult.error}.`);
+      return { success: false, provider: "Brevo", error: `Brevo error: ${brevoResult.error}` };
     }
 
     // 3. Fallback to standard SMTP (Nodemailer)
