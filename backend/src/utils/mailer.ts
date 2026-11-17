@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer, { Transporter } from "nodemailer";
 import {
   buildRegistrationEmailTemplate,
   RegistrationEmailTemplateOptions,
@@ -18,7 +18,7 @@ export interface SendConfirmationEmailParams extends Partial<RegistrationEmailTe
  * Creates an SMTP transporter from environment variables.
  * Compatible with Gmail App Passwords, Google Workspace, Outlook, Resend, SendGrid, Amazon SES, or custom SMTP.
  */
-export function getTransporter() {
+export function getTransporter(): Transporter | null {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const user = process.env.SMTP_USER;
@@ -29,7 +29,8 @@ export function getTransporter() {
   }
 
   const cleanUser = user.trim();
-  const cleanPass = pass.trim();
+  // Strip all internal whitespace in case user copied the Google App Password with spaces (e.g. 'abcd efgh ijkl mnop')
+  const cleanPass = pass.replace(/\s+/g, "").trim();
 
   // If host is Gmail / Google Workspace (e.g. ncetmail.com or gmail.com),
   // use dedicated Gmail transport service to bypass cloud port 587 STARTTLS firewalls.
@@ -88,7 +89,7 @@ export async function sendRegistrationThankYouEmail(
     }
 
     // Fetch cached dynamic template from Admin settings (in-memory cached, ultra-fast)
-    let activeTemplate = null;
+    let activeTemplate: any = null;
     try {
       activeTemplate = await getActiveEmailTemplate();
     } catch (e) {
@@ -99,7 +100,9 @@ export async function sendRegistrationThankYouEmail(
       toEmail,
       candidateName: params.candidateName,
       registrationId: params.registrationId,
-      institutionShortName: params.institutionShortName || activeTemplate?.institutionShortName,
+      institutionShortName:
+        params.institutionShortName ||
+        (activeTemplate?.institutionShortName === "ALL" ? undefined : activeTemplate?.institutionShortName),
       formTitle: params.formTitle,
       subject: params.subject || activeTemplate?.subject,
       fromName: params.fromName || activeTemplate?.fromName,
@@ -125,7 +128,7 @@ export async function sendRegistrationThankYouEmail(
     const emailPayload = buildRegistrationEmailTemplate(mergedOptions);
 
     console.log(`[Mailer] Dispatching confirmation email to ${toEmail}...`);
-    const info = await transporter.sendMail({
+    const info: any = await transporter.sendMail({
       from: emailPayload.from,
       to: emailPayload.to,
       replyTo: emailPayload.replyTo,
@@ -136,7 +139,7 @@ export async function sendRegistrationThankYouEmail(
     });
 
     console.log(
-      `[Mailer] Confirmation email sent successfully to ${toEmail} from ${emailPayload.from} (MessageId: ${info.messageId})`
+      `[Mailer] Confirmation email sent successfully to ${toEmail} from ${emailPayload.from} (MessageId: ${info?.messageId || "sent"})`
     );
     return true;
   } catch (error) {
@@ -224,7 +227,7 @@ export async function sendAdminLoginOtpEmail({
       </html>
     `;
 
-    const info = await transporter.sendMail({
+    const info: any = await transporter.sendMail({
       from: fromAddress,
       to: toEmail,
       subject: `Your Nagarjuna Connect Verification Code: ${otpCode}`,
@@ -232,7 +235,7 @@ export async function sendAdminLoginOtpEmail({
       attachments,
     });
 
-    console.log(`[Mailer] OTP sent successfully to ${toEmail} (MessageId: ${info.messageId})`);
+    console.log(`[Mailer] OTP sent successfully to ${toEmail} (MessageId: ${info?.messageId || "sent"})`);
     return true;
   } catch (err) {
     console.error(`[Mailer] Error dispatching OTP email to ${toEmail}:`, err);

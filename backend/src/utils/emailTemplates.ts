@@ -40,23 +40,37 @@ export interface RegistrationEmailTemplateOptions {
   useCidLogo?: boolean; // Set to true to embed the local logo as an inline attachment
 }
 
+export interface BuiltEmailPayload {
+  subject: string;
+  html: string;
+  text: string;
+  attachments: Array<{ filename: string; path: string; cid: string }>;
+  to: string;
+  from: string;
+  replyTo: string;
+}
+
 /**
  * Robustly resolves the absolute file path of the NGI logo on disk.
  */
 export function getLogoFilePath(): string | null {
-  const possiblePaths = [
-    path.join(__dirname, "../../assets/ngi-logo.png"),
-    path.join(__dirname, "../assets/ngi-logo.png"),
-    path.resolve(process.cwd(), "assets", "ngi-logo.png"),
-    path.resolve(process.cwd(), "backend", "assets", "ngi-logo.png"),
-    path.resolve(process.cwd(), "frontend", "public", "images", "ngi-logo.png"),
-    path.resolve(process.cwd(), "..", "frontend", "public", "images", "ngi-logo.png"),
-  ];
+  try {
+    const possiblePaths = [
+      path.join(__dirname, "../../assets/ngi-logo.png"),
+      path.join(__dirname, "../assets/ngi-logo.png"),
+      path.resolve(process.cwd(), "assets", "ngi-logo.png"),
+      path.resolve(process.cwd(), "backend", "assets", "ngi-logo.png"),
+      path.resolve(process.cwd(), "frontend", "public", "images", "ngi-logo.png"),
+      path.resolve(process.cwd(), "..", "frontend", "public", "images", "ngi-logo.png"),
+    ];
 
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p;
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        return p;
+      }
     }
+  } catch (err) {
+    console.warn("[EmailTemplates] Warning resolving logo file path:", err);
   }
   return null;
 }
@@ -65,7 +79,7 @@ export function getLogoFilePath(): string | null {
  * Builds the complete email payload (subject, html, text, attachments)
  * with full customization options and professional NGI branding.
  */
-export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplateOptions) {
+export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplateOptions): BuiltEmailPayload {
   const shortName = (options.institutionShortName || "NGI").toUpperCase();
   const isNCET = shortName === "NCET";
   const isNCMS = shortName === "NCMS";
@@ -98,7 +112,9 @@ export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplat
       .replace(/\{\{registrationId\}\}/gi, options.registrationId || "")
       .replace(/\{\{campusName\}\}/gi, defaultCampusName)
       .replace(/\{\{institution\}\}/gi, shortName)
-      .replace(/\{\{academicYear\}\}/gi, defaultAcademicYear);
+      .replace(/\{\{academicYear\}\}/gi, defaultAcademicYear)
+      .replace(/\{\{formTitle\}\}/gi, options.formTitle || defaultCampusName)
+      .replace(/\{\{toEmail\}\}/gi, options.toEmail || "");
   };
 
   // Editable fields with smart defaults
@@ -131,7 +147,7 @@ export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplat
 
   const stepsHeading = replaceTokens(options.stepsHeading || "WHAT HAPPENS NEXT:");
 
-  const steps = options.steps || [
+  const steps = options.steps && options.steps.length > 0 ? options.steps : [
     {
       title: "Document Review",
       description:
@@ -164,8 +180,8 @@ export function buildRegistrationEmailTemplate(options: RegistrationEmailTemplat
   const logoPath = getLogoFilePath();
 
   let logoSrc = "https://raw.githubusercontent.com/Prashanthncet/NGIConnect/main/frontend/public/images/ngi-header-logo.png";
-  if (options.logoUrl) {
-    logoSrc = options.logoUrl;
+  if (options.logoUrl && options.logoUrl.trim().length > 0) {
+    logoSrc = options.logoUrl.trim();
   } else if (logoPath && options.useCidLogo !== false) {
     attachments.push({
       filename: "ngi-logo.png",
@@ -442,21 +458,22 @@ ${footerAffiliation}
 ${footerCopyright}
   `.trim();
 
+  const effectiveFromName = (options.fromName || "Nagarjuna Connect Admissions").replace(/"/g, "").trim();
+  const effectiveFromEmail = (options.fromEmail || process.env.SMTP_USER || "admissions@ngi.org.in").trim();
+  const fromHeader = process.env.SMTP_FROM?.trim() || `"${effectiveFromName}" <${effectiveFromEmail}>`;
+  const replyToHeader =
+    options.replyTo?.trim() ||
+    process.env.SMTP_REPLY_TO?.trim() ||
+    supportEmail ||
+    effectiveFromEmail;
+
   return {
     subject,
     html,
     text,
     attachments,
     to: options.toEmail,
-    from:
-      options.fromEmail && options.fromName
-        ? `"${options.fromName}" <${options.fromEmail}>`
-        : options.fromEmail ||
-          process.env.SMTP_FROM ||
-          `"Nagarjuna Connect Admissions" <${process.env.SMTP_USER || "admissions@ngi.org.in"}>`,
-    replyTo:
-      options.replyTo ||
-      process.env.SMTP_REPLY_TO ||
-      supportEmail,
+    from: fromHeader,
+    replyTo: replyToHeader,
   };
 }

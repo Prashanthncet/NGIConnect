@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { EmailTemplate, IEmailTemplate } from "../models/EmailTemplate";
 
 // In-memory cache for high-concurrency performance (10,000+ registrations)
@@ -11,8 +12,13 @@ export async function getActiveEmailTemplate(): Promise<IEmailTemplate | null> {
     return cachedTemplate;
   }
 
+  // If MongoDB is not connected, return cached template or fallback to avoid buffering timeout
+  if (mongoose.connection.readyState !== 1) {
+    return cachedTemplate;
+  }
+
   try {
-    let template = await EmailTemplate.findOne({ identifier: "default" });
+    let template = await EmailTemplate.findOne({ identifier: "default" }).maxTimeMS(3000);
     if (!template) {
       template = await EmailTemplate.create({ identifier: "default" });
     }
@@ -21,7 +27,7 @@ export async function getActiveEmailTemplate(): Promise<IEmailTemplate | null> {
     return template;
   } catch (error) {
     console.error("[TemplateStore] Error fetching active email template:", error);
-    return null;
+    return cachedTemplate;
   }
 }
 
