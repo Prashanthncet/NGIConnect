@@ -41,9 +41,6 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      // Ensure database seed is initialized if first spin-up
-      await fetch("/api/seed");
-
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,9 +51,9 @@ export default function AdminLoginPage() {
         credentials: "include",
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setError(data.error || "Authentication failed. Please verify your email and password.");
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setError(data?.error || "Invalid administrator credentials. If this is default setup, use admin@ngi.org.in.");
         return;
       }
 
@@ -68,7 +65,9 @@ export default function AdminLoginPage() {
       // Successful login -> Redirect directly to Admin Dashboard
       router.push("/admin/dashboard");
     } catch {
-      setError("Unable to connect to authentication server. Please ensure the backend is running.");
+      setError(
+        "Unable to reach the server. The backend may be waking up from sleep mode (takes ~15-20s on free tier). Please wait a moment and try again."
+      );
     } finally {
       setLoading(false);
     }
