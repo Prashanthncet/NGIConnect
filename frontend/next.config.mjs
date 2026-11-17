@@ -2,7 +2,7 @@
 const backendUrl =
   process.env.BACKEND_URL ||
   (process.env.NODE_ENV === "production"
-    ? "https://ngiconnect-api.onrender.com"
+    ? "https://ngiconnect.onrender.com"
     : "http://127.0.0.1:5000");
 
 const nextConfig = {
