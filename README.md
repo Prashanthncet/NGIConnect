@@ -1,97 +1,169 @@
-# Nagarjuna Connect
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/Prashanthncet/NGIConnect/main/frontend/public/images/ngi-header-logo.png" alt="NGi Connect Banner" width="100%"/>
+
+</div>
 
 <div align="center">
 
-![Nagarjuna Connect Banner](https://raw.githubusercontent.com/Prashanthncet/NGIConnect/main/frontend/public/images/ngi-header-logo.png)
+**Next.js 14** · **React 18** · **Tailwind CSS v3** · **Express 4** · **TypeScript 5** · **MongoDB Atlas**
 
-### Unified Multi-Campus Institutional Portal & Dynamic Academic Registry
-
-[![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-green?style=for-the-badge&logo=node.js)](https://nodejs.org/)
-[![Express](https://img.shields.io/badge/Express-4.21-lightgrey?style=for-the-badge&logo=express)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose_8.7-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-WAF_&_DDoS-F38020?style=for-the-badge&logo=cloudflare)](https://www.cloudflare.com/)
-
----
-
-**Nagarjuna Connect** is an enterprise-grade digital admissions and institutional engagement platform serving **Nagarjuna College of Engineering and Technology (NCET)** and **Nagarjuna College of Management Studies (NCMS)** under the **Nagarjuna Group of Institutions (NGI)**.
-
-[Explore Platform](#-key-features) • [Quick Start](#-quick-start) • [Security & Cloudflare](#-enterprise-security--cloudflare-shield) • [Performance Benchmarks](#-high-concurrency--performance-benchmarks)
+<a href="#-testing"><img src="https://img.shields.io/badge/tests-smoke_%2B_api_passing-2f66b3?style=for-the-badge&logo=jest" alt="Smoke + API Tests Passing"/></a>
+<a href="#-modules"><img src="https://img.shields.io/badge/modules-7_core_modules-f9a03f?style=for-the-badge" alt="7 Core Modules"/></a>
+<a href="#-security--cloudflare-shield"><img src="https://img.shields.io/badge/security-helmet_%2B_RBAC_%2B_rate_limit-0d7d76?style=for-the-badge" alt="Security: Helmet + RBAC + Rate Limit"/></a>
 
 </div>
 
 ---
 
-## 🌟 Executive Overview
+## What this is
 
-Nagarjuna Connect unifies prospective student admissions, dynamic multi-campus registration workflows, and real-time administrative oversight into a secure, zero-latency monorepo ecosystem. 
+An enterprise-grade institutional admissions and dynamic registry ecosystem for **Nagarjuna Group of Institutions (NGI)**, covering the full applicant lifecycle — from initial program exploration through dynamic multi-campus registration, candidate status verification, and administrative reporting.
 
-Designed specifically for incoming PUC / 12th applicants, it provides streamlined application flows for autonomous engineering programs at NCET (VTU & NAAC A+) and commerce, management, and data science degrees at NCMS (Bengaluru North University).
+Built as a production-grade monorepo serving **Nagarjuna College of Engineering and Technology (NCET)** (Autonomous, VTU & NAAC A+) and **Nagarjuna College of Management Studies (NCMS)** (Bengaluru North University).
 
----
-
-## ⚡ Key Features
-
-- **Side-by-Side Responsive Admissions Hub:** Prominent, instant-action registration CTAs for both NCET and NCMS with zero layout shifts on mobile and desktop devices.
-- **Dynamic Form Engine:** Schema-driven registration system supporting customizable question types, field-level validations, regex phone validation (`^[6-9]\d{9}$`), and custom mobile-safe dropdown pickers.
-- **Instant 0ms Client-Side Hydration:** Forms render on the first frame using synchronized local schemas with non-blocking SWR background revalidation.
-- **Executive Administration Suite:** Integrated dashboard with real-time KPI metrics, application audit trails, automated status workflows (Verified, Pending, Under Review, Rejected), and ExcelJS reporting.
-- **Non-Blocking Background Mailer:** Asynchronous SMTP dispatch for registration receipts and official confirmations without delaying HTTP response cycles.
-- **Resilient Fallback Architecture:** Serverless edge proxy gracefully captures and queues applications during backend sleeping cycles or traffic bursts.
+| Layer | Technology | Port |
+|---|---|---|
+| **Frontend** | Next.js 14 (App Router), React 18, Tailwind CSS v3 | `3002` (dev) / `3000` (prod) |
+| **Backend** | Express 4.21, TypeScript 5.5, Node.js 20 REST API | `5000` |
+| **Database** | MongoDB Atlas via Mongoose 8.7 — 6 collections, compound indexes | `cloud cluster / local` |
+| **Auth** | Stateless JWT (HS256) bearer tokens, HTTP-only cookies, role-scoped RBAC | — |
 
 ---
 
-## 🛡️ Enterprise Security & Cloudflare Shield
-
-Nagarjuna Connect implements defense-in-depth protection engineered to withstand high-concurrency traffic surges, credential attacks, and automated scraping.
+## Architecture
 
 ```
-                           [ Cloudflare Edge Network ]
-                                       │
-                ┌──────────────────────┴──────────────────────┐
-                ▼                                             ▼
-       [ DDoS / Bot Mitigation ]                     [ WAF & Rate Limiter ]
-       • Managed Challenge                           • 50 req/min/IP limit
-       • Bot Fight Mode                              • OWASP Top 10 Core Rules
-                │                                             │
-                └──────────────────────┬──────────────────────┘
-                                       ▼
-                         [ Vercel Edge CDN Cache ]
-                         • 60s SWR for Form Schemas
-                         • 1-Year Immutable Asset Cache
-                                       │
-                                       ▼
-                       [ REST API & MongoDB Cluster ]
-                       • JWT Authentication & HTTPS Cookies
-                       • NoSQL Injection & Sanitization
-                       • Connection Pool (100 sockets)
+                             [ Cloudflare Edge Network ]
+                                         │
+                  ┌──────────────────────┴──────────────────────┐
+                  ▼                                             ▼
+         [ DDoS / Bot Mitigation ]                     [ WAF & Rate Limiter ]
+         • Managed Challenge                           • 50 req/min/IP limit
+         • Bot Fight Mode                              • OWASP Top 10 Core Rules
+                  │                                             │
+                  └──────────────────────┬──────────────────────┘
+                                         ▼
+                           [ Vercel Edge CDN Cache ]
+                           • Next.js 14 App Router
+                           • Server-Side /api/* Rewrite Proxy
+                                         │
+                                         ▼
+                         [ Render REST API (Express) ]
+                         • JWT Authentication & HTTP-Only Cookies
+                         • Rate Limiting & Input Sanitization
+                         • Asynchronous SMTP Email Worker
+                                         │
+                                         ▼
+                           [ MongoDB Atlas Cluster ]
+                           • Compound Unique Indexes
+                           • Schema-Driven Dynamic Documents
 ```
 
-### 1. Cloudflare Edge Proxy & WAF Configuration
-- **Full (Strict) SSL/TLS:** Enforces modern TLS 1.3 encryption end-to-end between visitor, Cloudflare Edge, and origin servers.
-- **Bot Fight Mode & Automated Threat Protection:** Challenges malicious scrapers and botnets before they reach origin compute.
-- **Web Application Firewall (WAF):** Rulesets block SQL/NoSQL injection signatures, cross-site scripting (XSS), path traversals, and anomalous user agents.
-- **Adaptive Rate Limiting:** Throttles sensitive registration endpoints to prevent spamming and denial-of-service attempts.
-
-### 2. HTTP Security Headers
-The platform enforces strict browser isolation policies:
-- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: SAMEORIGIN`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-
-### 3. Application Security & Data Integrity
-- **Stateless JWT & HTTP-Only Cookies:** Secure, signed sessions with automatic credential invalidation on logout.
-- **MongoDB NoSQL Protection:** Strict Mongoose schemas with type sanitization, trimmed strings, and compound indexing prevent injection attacks.
-- **Duplicate Application Shield:** Database compound index `{ formId: 1, candidateEmail: 1 }` prevents concurrent duplicate submissions.
+The browser **never** talks directly to the backend in the public registration path — `next.config.mjs` rewrites `/api/*` server-side, eliminating CORS preflight overhead in standard client flows and preventing token exposure to client-side redirects.
 
 ---
 
-## 📊 High Concurrency & Performance Benchmarks
+## Modules
 
-The system has been stress-tested under high concurrent load with zero timeouts and sub-50ms response times:
+- **Dynamic Form Engine** — Schema-driven admissions forms with customizable question types, conditional validation, regex phone checks (`^[6-9]\d{9}$`), and schema multi-versioning (`formversions`).
+- **Admissions & Candidate Registry** — Multi-institution candidate routing (`NCET` & `NCMS`), mobile-safe registration UX, and automated confirmation workflows.
+- **Executive Administration Console** — Real-time KPI aggregation, live registration statistics, candidate search, filtering, and application status workflows (`Verified`, `Pending`, `Under Review`, `Rejected`).
+- **Dynamic Form Builder** — Visual schema builder with drag-and-drop field configurations, live preview, version snapshotting, and draft/publish controls.
+- **Email Notification Dispatcher** — Asynchronous SMTP email engine with Nodemailer, dispatching registration receipts and acceptance notices without blocking HTTP responses.
+- **Reporting & Data Export** — Streamed ExcelJS workbook generator for real-time candidate exports filtered by institution, branch, status, or date range.
+- **Role-Based Access Control (RBAC)** — Multi-tiered administrative permissions (`super_admin`, `admin`, `viewer`) with cryptographic password hashing (bcrypt).
+
+<details>
+<summary><b>Notable implementation details</b></summary>
+
+**Dynamic Form Engine & 0ms Hydration** — Dynamic forms render on the first frame using synchronized local fallback schemas paired with non-blocking SWR background revalidation, guaranteeing zero layout shifts on poor mobile connections.
+
+**Duplicate Application Shield** — Applications are guarded at the database level with a compound unique index `{ formId: 1, candidateEmail: 1 }`. Concurrent duplicate submissions return a deterministic `409 Conflict` before any write occurs.
+
+**Non-Blocking SMTP Mailer** — Notifications execute asynchronously in a background worker context. If SMTP credentials fail or are misconfigured, application records are securely committed without failing the user's registration transaction.
+
+**Anchored CORS Security** — Cross-Origin Resource Sharing is strictly anchored to verified project deployments (`ngi-connect.vercel.app` and configured `FRONTEND_URL`), preventing unauthorized cross-origin credentialed requests.
+
+</details>
+
+---
+
+## Quick start
+
+Requires **Node.js v18.18+** or **v20.x**.
+
+```bash
+# 1 ── Backend
+cd backend
+npm install
+npm run build
+npm run dev          # → http://localhost:5000  ·  health at /api/health
+```
+
+```bash
+# 2 ── Frontend (separate terminal)
+cd frontend
+npm install
+npm run dev          # → http://localhost:3002
+```
+
+Unified Root Dev: `npm run install:all` then `npm run dev:backend` & `npm run dev:frontend`.
+
+### Environment Setup
+
+Copy example files (`.env` files are gitignored for safety):
+
+```bash
+cp backend/.env.example  backend/.env
+cp frontend/.env.example frontend/.env.local
+```
+
+Key environment configurations:
+
+```env
+# backend/.env
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/ngiconnect
+JWT_SECRET=ngi_connect_super_secret_jwt_key_2026_institutional_secure
+FRONTEND_URL=http://localhost:3002
+ADMIN_URL=http://localhost:3002
+
+# frontend/.env.local
+BACKEND_URL=http://127.0.0.1:5000
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+PORT=3002
+```
+
+Production boot **fails fast** if `MONGODB_URI` or `JWT_SECRET` is missing, preventing insecure deployments from starting.
+
+---
+
+## Demo credentials
+
+Seeded default administrator credentials for local development and demonstration:
+
+| Email | Password | Role | Access Level |
+|---|---|---|---|
+| `admin@ngi.org.in` | `AdminNGI@2026` | `super_admin` | Full System & User Management |
+
+> **Note:** Update the admin password immediately upon deploying to production via the `/admin/users` console.
+
+---
+
+## Testing
+
+```bash
+npm test             # Run comprehensive smoke and integration test suite
+npm run test:smoke   # Health check, CORS, and endpoint latency verification
+npm run test:api     # Functional API integration and authentication test suite
+npm run test:stress  # High-concurrency load and throughput benchmark
+```
+
+**All core integration tests passing.** The test suite verifies health endpoints, database seeding, administrative authentication, dynamic form creation, registration submission, duplicate prevention, and Excel export streaming.
+
+### High-Concurrency Benchmarks
 
 | Metric | Benchmark Result | Target Standard |
 |---|---|---|
@@ -100,99 +172,119 @@ The system has been stress-tested under high concurrent load with zero timeouts 
 | **50th Percentile (Median)** | **17 ms** | < 50 ms |
 | **99th Percentile** | **61 ms** | < 250 ms |
 | **Success Rate (200 OK)** | **100.0%** (0 errors) | 99.9% |
-| **Concurrent Virtual Users** | **5,000+ Concurrent** | High-Volume PUC Influx |
 
 ---
 
-## 🌐 Network & Service Mapping
+## Scripts
 
-| Component | Default URL | Environment | Description |
-|---|---|---|---|
-| **Public Portal & Admin** | `http://localhost:3002` | Next.js 14 App Router | Candidate portal, registration forms, and admin console |
-| **Core REST API** | `http://localhost:5000` | Express / Node.js | Mongoose data layer, authentication, and dynamic form engine |
-| **API Health Check** | `http://localhost:5000/api/health` | REST Endpoint | Real-time system vitals, uptime, and DB connectivity |
+| Command (in `backend/`) | Description |
+|---|---|
+| `npm run dev` | Watch mode with `ts-node-dev` on port 5000 |
+| `npm run build` | Compile TypeScript (`src/` → `dist/`) |
+| `npm run start` | Run compiled production server (`node dist/server.js`) |
 
----
+| Command (in `frontend/`) | Description |
+|---|---|
+| `npm run dev` | Next.js development server on port 3002 |
+| `npm run build` | Production Next.js build + typecheck |
+| `npm run start` | Run production Next.js server on port 3002 |
+| `npm run lint` | Run ESLint static analysis |
+| `npm run clean` | Free port 3002 if locked by zombie processes |
 
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js**: `v18.18+` or `v20.x`
-- **npm**: `v9.x+`
-- **MongoDB**: Local community server or MongoDB Atlas cluster URI
-
-### 1. Install Workspace Dependencies
-```bash
-# Clone the repository
-git clone https://github.com/Prashanthncet/NGIConnect.git
-cd NGIConnect
-
-# Install dependencies for root, frontend, and backend
-npm run install:all
-```
-
-### 2. Environment Configuration
-Create environment files from the provided samples:
-
-```bash
-# Backend Environment
-cp backend/.env.example backend/.env
-
-# Frontend Environment
-cp frontend/.env.example frontend/.env.local
-```
-
-Key environment parameters:
-```env
-# backend/.env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/ngi_connect
-JWT_SECRET=your_jwt_secret_key_minimum_32_characters
-FRONTEND_URL=http://localhost:3002
-
-# frontend/.env.local
-BACKEND_URL=http://127.0.0.1:5000
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-```
-
-### 3. Launch Development Servers
-```bash
-# Start backend API (Terminal 1)
-npm run dev:backend
-
-# Start frontend portal (Terminal 2)
-npm run dev:frontend
-```
-
-Open [http://localhost:3002](http://localhost:3002) to view the application.
+| Command (in root) | Description |
+|---|---|
+| `npm run install:all` | Install all root, backend, and frontend dependencies |
+| `npm run build` | Unified build (`build:backend` && `build:frontend`) |
+| `npm test` | Run complete smoke and API test suites |
+| `npm run kill:ports` | Clean kill hanging processes on ports 3002 and 5000 |
 
 ---
 
-## 📦 Production Build
+## Design system
 
-Run the unified monorepo build command:
+The user interface is crafted with a responsive, modern Tailwind CSS design system tailored for academic and institutional trust:
 
-```bash
-npm run build
+- **Component Kit**: Reusable UI blocks including `StatCard`, `Badge`, `FormBuilderField`, `AdminShell`, `CandidateTable`, and `ToastNotification`.
+- **Responsive Layout**: Designed mobile-first for PUC / 12th applicants submitting registrations via smartphones.
+- **Accessibility**: Focus-visible rings, accessible form labels, semantic HTML structure, and strict color contrast ratios.
+
+---
+
+## Project layout
+
+```
+NGIConnect/
+├── backend/
+│   ├── src/
+│   │   ├── config/          Database (Mongoose) & environment variable schemas
+│   │   ├── controllers/     Auth, registration, form, user, and statistics controllers
+│   │   ├── middleware/      JWT verification, RBAC guards, rate limiter, error handling
+│   │   ├── models/          Mongoose schemas: Admin, Form, FormVersion, Institution, Registration
+│   │   ├── routes/          API route definitions with /api mounting
+│   │   ├── utils/           Mailer, token helpers, Excel generator, seed data
+│   │   └── server.ts        Application bootstrap: CORS, security headers, routing
+│   ├── tsconfig.json        TypeScript compiler configuration
+│   └── package.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── (public)/    / (Home landing), /register, /registration-success
+│   │   │   ├── admin/       /admin/login, /admin/(portal)/dashboard, form-builder, registrations, users
+│   │   │   ├── api/         Next.js route handlers
+│   │   │   └── layout.tsx   Root layout and metadata
+│   │   ├── components/      Reusable UI components, admin navigation, form viewer
+│   │   └── lib/             API client with bearer token management
+│   ├── next.config.mjs      Server-side /api/* proxy rewrite to backend
+│   ├── tailwind.config.ts   Tailwind CSS theme tokens
+│   └── package.json
+│
+├── tests/
+│   ├── smoke-test.js        Rapid endpoint & health verification
+│   ├── api-test.js          Full functional API integration test suite
+│   └── stress-test.js       Concurrency and latency load test
+│
+├── audits/                  Security, performance, and compliance audit reports
+├── backups/                 Pre-deletion snapshots & database collection archives
+├── render.yaml              Render Web Service deployment blueprint
+└── package.json             Monorepo scripts and workspace definitions
 ```
 
-This compiles:
-1. `npm run build:backend` via TypeScript (`tsc`).
-2. `npm run build:frontend` via Next.js (`next build`) with static page pre-rendering and asset optimization.
+---
+
+## Owner
+
+| | |
+|---|---|
+| **Maintainer** | **Prashanth** · `prashanth123@ncetmail.com` |
+| **Institution** | **Nagarjuna Group of Institutions (NGI)** |
+| **Campuses** | **NCET** (Autonomous Engineering) & **NCMS** (Management Studies) |
 
 ---
 
-## 🔒 Administrative Access
+## Known limitations
 
-- **Admin Login Route:** `/admin/login`
-- **Default Username:** `admin@ngi.org.in`
-- **Default Password:** `AdminNGI@2026`
+Stated plainly for production engineering clarity:
 
-> **Note:** For production environments, update the admin password immediately through the `/admin/users` management portal and enable MFA.
+- **SMTP Relay**: Email notifications require valid Gmail App Passwords or transactional SMTP credentials (SendGrid, Postmark). In local development without SMTP, operations succeed while email dispatch gracefully mocks.
+- **Rate Limiting**: Rate limiting is currently managed in-memory per Node instance. If horizontally scaling across multiple Render instances, back the rate limiter with a shared Redis cache.
+- **File Uploads**: Registrations currently process structured dynamic text and schema fields. Uploads for large PDF/image portfolios should connect to AWS S3 or Cloudinary buckets.
 
 ---
 
-## 📄 License & Attribution
+## Documentation
 
-Designed and developed for **Nagarjuna Group of Institutions (NGI)**.  
-© 2026 Nagarjuna College of Engineering and Technology & Nagarjuna College of Management Studies. All Rights Reserved.
+| Document | Description |
+|---|---|
+| [`audits/security-audit-report.md`](audits/security-audit-report.md) | Comprehensive security audit, CVE review, and CORS validation |
+| [`render.yaml`](render.yaml) | Infrastructure-as-code blueprint for Render Web Service deployment |
+| [`backups/pre_deletion_backup/`](backups/pre_deletion_backup) | Pre-deployment database snapshots and environment variable backup |
+| **API Health Vitals** | `http://localhost:5000/api/health` |
+
+---
+
+<div align="center">
+
+*“Leadership through Excellence — Nagarjuna Group of Institutions.”*
+
+</div>
