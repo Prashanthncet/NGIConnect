@@ -15,6 +15,102 @@ export interface SendConfirmationEmailParams extends Partial<RegistrationEmailTe
 }
 
 /**
+ * Sends an email using the Resend REST API (HTTPS port 443).
+ * Fully functional on Render Free tier where outbound SMTP ports 25, 465, and 587 are blocked.
+ */
+async function sendViaResend(payload: {
+  to: string;
+  fromName?: string;
+  fromEmail?: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const apiKey = (process.env.RESEND_API_KEY || "").trim();
+    if (!apiKey) return { success: false, error: "No RESEND_API_KEY" };
+
+    const fromAddress =
+      process.env.RESEND_FROM?.trim() ||
+      (payload.fromName
+        ? `"${payload.fromName.replace(/"/g, "")}" <onboarding@resend.dev>`
+        : "Nagarjuna Connect <onboarding@resend.dev>");
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromAddress,
+        to: [payload.to],
+        subject: payload.subject,
+        html: payload.html,
+        text: payload.text,
+        reply_to: payload.replyTo,
+      }),
+    });
+
+    const data: any = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data?.message || JSON.stringify(data) };
+    }
+    return { success: true, id: data?.id };
+  } catch (err: any) {
+    return { success: false, error: err?.message || String(err) };
+  }
+}
+
+/**
+ * Sends an email using Brevo REST API (HTTPS port 443).
+ */
+async function sendViaBrevo(payload: {
+  to: string;
+  toName?: string;
+  fromName?: string;
+  fromEmail?: string;
+  subject: string;
+  html: string;
+  text: string;
+  replyTo?: string;
+}): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const apiKey = (process.env.BREVO_API_KEY || "").trim();
+    if (!apiKey) return { success: false, error: "No BREVO_API_KEY" };
+
+    const senderEmail = process.env.BREVO_FROM_EMAIL?.trim() || payload.fromEmail || "admissions@ngi.org.in";
+    const senderName = payload.fromName || "Nagarjuna Connect Admissions";
+
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: payload.to, name: payload.toName || "Candidate" }],
+        subject: payload.subject,
+        htmlContent: payload.html,
+        textContent: payload.text,
+        replyTo: payload.replyTo ? { email: payload.replyTo } : undefined,
+      }),
+    });
+
+    const data: any = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data?.message || JSON.stringify(data) };
+    }
+    return { success: true, id: data?.messageId };
+  } catch (err: any) {
+    return { success: false, error: err?.message || String(err) };
+  }
+}
+
+/**
  * Creates an SMTP transporter from environment variables.
  * Compatible with Gmail App Passwords, Google Workspace, Outlook, Resend, SendGrid, Amazon SES, or custom SMTP.
  */
@@ -32,8 +128,7 @@ export function getTransporter(): Transporter | null {
   // Strip all internal whitespace in case user copied the Google App Password with spaces (e.g. 'abcd efgh ijkl mnop')
   const cleanPass = pass.replace(/\s+/g, "").trim();
 
-  // If host is Gmail / Google Workspace (e.g. ncetmail.com or gmail.com),
-  // use dedicated Gmail transport service to bypass cloud port 587 STARTTLS firewalls.
+  // If host is Gmail / Google Workspace, use dedicated Gmail transport
   if (host.includes("gmail") || cleanUser.includes("@gmail.com") || cleanUser.includes("ncetmail.com")) {
     return nodemailer.createTransport({
       service: "gmail",
@@ -66,7 +161,7 @@ export function getTransporter(): Transporter | null {
 
 /**
  * Asynchronously dispatches an official Thank You & Confirmation email to the registered candidate.
- * Fully customizable: sender ("from"), recipient ("to"), reply-to, subject, steps, branding, and NGI logo.
+ * Supports HTTP REST API (Resend / Brevo over port 443) and SMTP (ports 465/587).
  */
 export async function sendRegistrationThankYouEmail(
   params: SendConfirmationEmailParams
@@ -79,16 +174,7 @@ export async function sendRegistrationThankYouEmail(
       return false;
     }
 
-    const transporter = getTransporter();
-
-    if (!transporter) {
-      console.log(
-        `[Mailer] SMTP credentials not set in .env (SMTP_USER / SMTP_PASS). Ready to send once configured. Target: ${toEmail} | RegID: ${registrationId}`
-      );
-      return false;
-    }
-
-    // Fetch cached dynamic template from Admin settings (in-memory cached, ultra-fast)
+    // Fetch cached dynamic template from Admin settings
     let activeTemplate: any = null;
     try {
       activeTemplate = await getActiveEmailTemplate();
@@ -127,7 +213,58 @@ export async function sendRegistrationThankYouEmail(
     // Build the email payload with all customized or default values
     const emailPayload = buildRegistrationEmailTemplate(mergedOptions);
 
-    console.log(`[Mailer] Dispatching confirmation email to ${toEmail}...`);
+    // 1. Try Resend HTTP API (HTTPS port 443 - works everywhere including Render Free Tier)
+    if (process.env.RESEND_API_KEY) {
+      console.log(`[Mailer] Dispatching confirmation email via Resend API to ${toEmail}...`);
+      const resendResult = await sendViaResend({
+        to: emailPayload.to,
+        fromName: emailPayload.fromName,
+        fromEmail: emailPayload.fromEmail,
+        subject: emailPayload.subject,
+        html: emailPayload.html,
+        text: emailPayload.text,
+        replyTo: emailPayload.replyTo,
+      });
+
+      if (resendResult.success) {
+        console.log(`[Mailer] Confirmation email sent successfully via Resend to ${toEmail} (Id: ${resendResult.id})`);
+        return true;
+      }
+      console.warn(`[Mailer] Resend API failed: ${resendResult.error}. Falling back to other providers...`);
+    }
+
+    // 2. Try Brevo HTTP API (HTTPS port 443)
+    if (process.env.BREVO_API_KEY) {
+      console.log(`[Mailer] Dispatching confirmation email via Brevo API to ${toEmail}...`);
+      const brevoResult = await sendViaBrevo({
+        to: emailPayload.to,
+        toName: params.candidateName,
+        fromName: emailPayload.fromName,
+        fromEmail: emailPayload.fromEmail,
+        subject: emailPayload.subject,
+        html: emailPayload.html,
+        text: emailPayload.text,
+        replyTo: emailPayload.replyTo,
+      });
+
+      if (brevoResult.success) {
+        console.log(`[Mailer] Confirmation email sent successfully via Brevo to ${toEmail} (Id: ${brevoResult.id})`);
+        return true;
+      }
+      console.warn(`[Mailer] Brevo API failed: ${brevoResult.error}. Falling back to other providers...`);
+    }
+
+    // 3. Fallback to standard SMTP (Nodemailer)
+    const transporter = getTransporter();
+
+    if (!transporter) {
+      console.log(
+        `[Mailer] No mail service configured. Set RESEND_API_KEY (recommended for Render Free tier) or SMTP_USER/SMTP_PASS in environment variables. Target: ${toEmail} | RegID: ${registrationId}`
+      );
+      return false;
+    }
+
+    console.log(`[Mailer] Dispatching confirmation email via SMTP to ${toEmail}...`);
     const info: any = await transporter.sendMail({
       from: emailPayload.from,
       to: emailPayload.to,
@@ -142,8 +279,22 @@ export async function sendRegistrationThankYouEmail(
       `[Mailer] Confirmation email sent successfully to ${toEmail} from ${emailPayload.from} (MessageId: ${info?.messageId || "sent"})`
     );
     return true;
-  } catch (error) {
-    console.error(`[Mailer] Error dispatching confirmation email to ${params.toEmail}:`, error);
+  } catch (error: any) {
+    const isConnectionTimeout =
+      error?.code === "ETIMEDOUT" ||
+      error?.code === "ECONNREFUSED" ||
+      error?.code === "ESOCKETTIMEDOUT" ||
+      error?.message?.includes("timeout");
+
+    if (isConnectionTimeout) {
+      console.warn(
+        `[Mailer] ⚠️ Cloud Network Notice: Outbound SMTP connection timed out (${error.code || "TIMEOUT"}). ` +
+        `Render Free Tier blocks outbound ports 25, 465, and 587. ` +
+        `To send emails on Render Free Tier, provide RESEND_API_KEY (over HTTPS port 443) or upgrade to a Render paid plan.`
+      );
+    } else {
+      console.error(`[Mailer] Error dispatching confirmation email to ${params.toEmail}:`, error);
+    }
     return false;
   }
 }
@@ -161,15 +312,6 @@ export async function sendAdminLoginOtpEmail({
   adminName: string;
 }): Promise<boolean> {
   try {
-    const transporter = getTransporter();
-    if (!transporter) {
-      console.log(`[Mailer] No SMTP credentials configured. Generated OTP for ${toEmail}: ${otpCode}`);
-      return false;
-    }
-
-    const fromAddress =
-      process.env.SMTP_FROM || `"Nagarjuna Connect Security" <${process.env.SMTP_USER || "security@ngi.org.in"}>`;
-
     const logoPath = getLogoFilePath();
     const attachments = logoPath
       ? [{ filename: "ngi-logo.png", path: logoPath, cid: "ngiotplogo@ngi.edu" }]
@@ -227,15 +369,59 @@ export async function sendAdminLoginOtpEmail({
       </html>
     `;
 
+    const subject = `Your Nagarjuna Connect Verification Code: ${otpCode}`;
+    const text = `Hello ${adminName},\n\nYour Nagarjuna Connect verification code is: ${otpCode}\nValid for 10 minutes.`;
+
+    // 1. Try Resend HTTP API
+    if (process.env.RESEND_API_KEY) {
+      const resendResult = await sendViaResend({
+        to: toEmail,
+        fromName: "Nagarjuna Connect Security",
+        subject,
+        html: htmlContent,
+        text,
+      });
+      if (resendResult.success) {
+        console.log(`[Mailer] OTP sent successfully via Resend to ${toEmail} (Id: ${resendResult.id})`);
+        return true;
+      }
+    }
+
+    // 2. Try Brevo HTTP API
+    if (process.env.BREVO_API_KEY) {
+      const brevoResult = await sendViaBrevo({
+        to: toEmail,
+        toName: adminName,
+        fromName: "Nagarjuna Connect Security",
+        subject,
+        html: htmlContent,
+        text,
+      });
+      if (brevoResult.success) {
+        console.log(`[Mailer] OTP sent successfully via Brevo to ${toEmail} (Id: ${brevoResult.id})`);
+        return true;
+      }
+    }
+
+    // 3. Fallback to SMTP
+    const transporter = getTransporter();
+    if (!transporter) {
+      console.log(`[Mailer] No mail service configured. Generated OTP for ${toEmail}: ${otpCode}`);
+      return false;
+    }
+
+    const fromAddress =
+      process.env.SMTP_FROM || `"Nagarjuna Connect Security" <${process.env.SMTP_USER || "security@ngi.org.in"}>`;
+
     const info: any = await transporter.sendMail({
       from: fromAddress,
       to: toEmail,
-      subject: `Your Nagarjuna Connect Verification Code: ${otpCode}`,
+      subject,
       html: htmlContent,
       attachments,
     });
 
-    console.log(`[Mailer] OTP sent successfully to ${toEmail} (MessageId: ${info?.messageId || "sent"})`);
+    console.log(`[Mailer] OTP sent successfully via SMTP to ${toEmail} (MessageId: ${info?.messageId || "sent"})`);
     return true;
   } catch (err) {
     console.error(`[Mailer] Error dispatching OTP email to ${toEmail}:`, err);

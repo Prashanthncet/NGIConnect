@@ -47,6 +47,8 @@ export interface BuiltEmailPayload {
   attachments: Array<{ filename: string; path: string; cid: string }>;
   to: string;
   from: string;
+  fromName: string;
+  fromEmail: string;
   replyTo: string;
 }
 
@@ -474,6 +476,8 @@ ${footerCopyright}
     attachments,
     to: options.toEmail,
     from: fromHeader,
+    fromName: effectiveFromName,
+    fromEmail: effectiveFromEmail,
     replyTo: replyToHeader,
   };
 }
