@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import authRoutes from "./authRoutes";
 import formRoutes from "./formRoutes";
 import registrationRoutes from "./registrationRoutes";
@@ -21,10 +22,20 @@ router.use("/seed", seedRoutes);
 
 // Health check endpoint
 router.get("/health", (req, res) => {
+  const isSmtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
   res.json({
     status: "ok",
     service: "Nagarjuna Connect Backend API",
     timestamp: new Date().toISOString(),
+    mailer: {
+      configured: isSmtpConfigured,
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      userConfigured: Boolean(process.env.SMTP_USER),
+      passConfigured: Boolean(process.env.SMTP_PASS),
+    },
+    database: {
+      connected: mongoose.connection.readyState === 1,
+    },
   });
 });
 

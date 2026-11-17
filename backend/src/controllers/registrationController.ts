@@ -100,12 +100,23 @@ export async function submitRegistration(req: Request, res: Response, next: Next
       Object.values(sanitizedResponses)[0] ||
       "Candidate";
 
-    const candidateEmail =
+    let candidateEmail =
       sanitizedResponses["email"] ||
       sanitizedResponses["institutional_email"] ||
       sanitizedResponses["email_address"] ||
       sanitizedResponses["personal_email"] ||
+      sanitizedResponses["student_email"] ||
       "";
+
+    // Dynamic scan: if not found under common keys, check any response containing an email address
+    if (!candidateEmail) {
+      for (const val of Object.values(sanitizedResponses)) {
+        if (typeof val === "string" && val.includes("@") && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) {
+          candidateEmail = val.trim();
+          break;
+        }
+      }
+    }
 
     const candidatePhone =
       sanitizedResponses["phone"] ||
